@@ -1,5 +1,14 @@
 # ASC Selection Homework — HPL Performance Optimization
 
+## Submission Information
+
+- 姓名：张嘉
+- 年级专业：25级计算机科学与技术专业1班
+- 对应题目：基础题 — HPL
+- 运行环境：Windows 11 + WSL2 Ubuntu 26.04 LTS；Intel Core i7-10510U；Open MPI 5.0.10；OpenBLAS 0.3.32；GCC/GFortran 15.2.0。详细信息见 [Hardware and Software Environment](#2-hardware-and-software-environment)。
+- 完成情况：已完成 HPL 环境搭建、编译运行、Baseline、至少三组参数实验、NB / MPI process grid / problem size / BCAST × DEPTH 调优、正确性验证、重复实验、性能波动分析、DGEMM 性能参考、结果可视化与复现整理。
+- 复现方式：见 [Build](#4-build)、[Runtime Configuration](#5-runtime-configuration)、[Reproducing an HPL Run](#15-reproducing-an-hpl-run) 和 [Reproducing the Analysis and Figures](#16-reproducing-the-analysis-and-figures)。
+
 本仓库记录 ASC 选拔作业基础题 **HPL 性能优化** 的完整实践过程，包括环境配置、Baseline、参数搜索、正确性验证、重复实验、性能上限分析和可复现脚本。
 
 HPL 使用官方 Netlib HPL 2.3。上游 HPL 计算源码未修改，本实验主要工作集中在：
