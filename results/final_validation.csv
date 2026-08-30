@@ -1,0 +1,7 @@
+experiment,N,NB,P,Q,np,time_s,gflops,status
+baseline_final1,18432,128,2,2,4,63.07,6.6203e+01,PASSED
+best_final1,23040,192,2,2,4,126.62,6.4403e+01,PASSED
+baseline_final2,18432,128,2,2,4,70.27,5.9419e+01,PASSED
+best_final2,23040,192,2,2,4,151.84,5.3706e+01,PASSED
+baseline_final3,18432,128,2,2,4,79.04,5.2823e+01,PASSED
+best_final3,23040,192,2,2,4,123.16,6.6212e+01,PASSED

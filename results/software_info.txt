@@ -1,0 +1,27 @@
+===== DATE =====
+Sat Aug 29 23:51:07 CST 2026
+===== GCC =====
+gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+===== GFORTRAN =====
+GNU Fortran (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+===== MPICC =====
+gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+===== MPIRUN =====
+===== OPENBLAS VERSION =====
+0.3.32
+===== OPENBLAS CFLAGS =====
+-I/usr/include/x86_64-linux-gnu/openblas-pthread/
+===== OPENBLAS LIBS =====
+-L/usr/lib/x86_64-linux-gnu/openblas-pthread/ -lopenblas

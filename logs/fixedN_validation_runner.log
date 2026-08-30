@@ -1,0 +1,57 @@
+==================================================
+START pair=1 order=first case=baseline: Sun Aug 30 09:10:56 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       790Mi       6.9Gi       3.6Mi       177Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   128     2     2              54.92             7.6029e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.55395228e-03 ...... PASSED
+==================================================
+START pair=1 order=second case=nb192: Sun Aug 30 09:14:58 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       785Mi       6.8Gi       3.6Mi       233Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   192     2     2              50.65             8.2429e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.20938038e-03 ...... PASSED
+==================================================
+START pair=2 order=first case=baseline: Sun Aug 30 09:18:56 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       790Mi       6.8Gi       3.6Mi       235Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   128     2     2              49.61             8.4164e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.55395228e-03 ...... PASSED
+==================================================
+START pair=2 order=second case=nb192: Sun Aug 30 09:22:52 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       791Mi       6.8Gi       3.6Mi       235Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   192     2     2              52.38             7.9708e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.20938038e-03 ...... PASSED
+==================================================
+START pair=3 order=first case=nb192: Sun Aug 30 09:26:51 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       786Mi       6.8Gi       3.6Mi       268Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   192     2     2              49.45             8.4430e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.20938038e-03 ...... PASSED
+==================================================
+START pair=3 order=second case=baseline: Sun Aug 30 09:30:47 CST 2026
+==================================================
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       789Mi       6.8Gi       3.6Mi       268Mi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+WR01C2R4       18432   128     2     2              56.11             7.4418e+01
+||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   2.55395228e-03 ...... PASSED
+
+===== FIXED-N VALIDATION COMPLETE =====
+pair,order,experiment,N,NB,P,Q,np,time_s,gflops,status
+1,first,baseline,18432,128,2,2,4,54.92,7.6029e+01,PASSED
+1,second,nb192,18432,192,2,2,4,50.65,8.2429e+01,PASSED
+2,first,baseline,18432,128,2,2,4,49.61,8.4164e+01,PASSED
+2,second,nb192,18432,192,2,2,4,52.38,7.9708e+01,PASSED
+3,first,nb192,18432,192,2,2,4,49.45,8.4430e+01,PASSED
+3,second,baseline,18432,128,2,2,4,56.11,7.4418e+01,PASSED

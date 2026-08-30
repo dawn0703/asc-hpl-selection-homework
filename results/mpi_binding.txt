@@ -1,0 +1,8 @@
+[win:05503] Rank 0 bound to package[0][core:L0]
+[win:05503] Rank 1 bound to package[0][core:L1]
+[win:05503] Rank 2 bound to package[0][core:L2]
+win
+win
+win
+[win:05503] Rank 3 bound to package[0][core:L3]
+win

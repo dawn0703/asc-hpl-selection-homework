@@ -1,0 +1,6 @@
+===== N=2048 REPS=5 =====
+DGEMM_RESULT ranks=4 N=2048 reps=5 time=4.014795 GFLOPS=85.583
+===== N=3072 REPS=3 =====
+DGEMM_RESULT ranks=4 N=3072 reps=3 time=8.476721 GFLOPS=82.082
+===== N=4096 REPS=2 =====
+DGEMM_RESULT ranks=4 N=4096 reps=2 time=12.714375 GFLOPS=86.478

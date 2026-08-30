@@ -1,0 +1,21 @@
+metric,value,unit,interpretation
+nb128_mean,78.204,GFLOPS,Fixed-N repeated baseline mean
+nb128_median,76.029,GFLOPS,Fixed-N repeated baseline median
+nb128_cv,6.68,%,Sample coefficient of variation
+nb192_mean,82.189,GFLOPS,Fixed-N repeated optimized mean
+nb192_median,82.429,GFLOPS,Fixed-N repeated optimized median
+nb192_cv,2.88,%,Sample coefficient of variation
+fixedN_mean_improvement,5.10,%,NB=192 mean versus NB=128 mean
+fixedN_pair1_improvement,8.42,%,NB=192 versus NB=128 within pair
+fixedN_pair2_improvement,-5.29,%,NB=192 versus NB=128 within pair
+fixedN_pair3_improvement,13.45,%,NB=192 versus NB=128 within pair
+nominal_base_frequency_rpeak,115.2,GFLOPS,4 cores × 1.8 GHz × 16 FP64 FLOP/cycle/core
+hpl_mean_over_nominal_rpeak,71.3,%,Validated HPL mean / nominal base-frequency Rpeak
+highest_observed_hpl,84.430,GFLOPS,Highest single HPL observation in retained datasets
+best_observed_dgemm,86.478,GFLOPS,"Empirical reference, not a strict ceiling"
+hpl_mean_over_best_observed_dgemm,95.0,%,Empirical comparison only
+bcast3_depth1_gain_vs_bcast1_depth0,11.20,%,Single-session exploratory comparison
+depth1_gain_at_bcast1,7.50,%,Exploratory main effect within BCAST=1
+depth1_gain_at_bcast3,20.20,%,Exploratory main effect within BCAST=3
+bcast3_gain_at_depth0,-7.49,%,Shows interaction: BCAST=3 is worse at DEPTH=0
+bcast3_gain_at_depth1,3.44,%,Shows interaction: BCAST=3 is better at DEPTH=1

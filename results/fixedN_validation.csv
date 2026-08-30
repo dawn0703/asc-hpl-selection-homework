@@ -1,0 +1,7 @@
+pair,order,experiment,N,NB,P,Q,np,time_s,gflops,status
+1,first,baseline,18432,128,2,2,4,54.92,7.6029e+01,PASSED
+1,second,nb192,18432,192,2,2,4,50.65,8.2429e+01,PASSED
+2,first,baseline,18432,128,2,2,4,49.61,8.4164e+01,PASSED
+2,second,nb192,18432,192,2,2,4,52.38,7.9708e+01,PASSED
+3,first,nb192,18432,192,2,2,4,49.45,8.4430e+01,PASSED
+3,second,baseline,18432,128,2,2,4,56.11,7.4418e+01,PASSED

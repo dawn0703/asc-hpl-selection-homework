@@ -1,0 +1,48 @@
+CPU: Intel Core i7-10510U
+Physical cores: 4
+Base frequency: 1.80 GHz
+SIMD: AVX2
+FMA: yes
+
+FP64 FLOP/cycle/core:
+4 doubles/vector * 2 FLOP/FMA * 2 vector FMA units = 16
+
+Nominal base-frequency Rpeak:
+4 cores * 1.80 GHz * 16 FLOP/cycle = 115.2 GFLOPS
+
+Fixed-N HPL baseline (NB=128):
+mean   = 78.204 GFLOPS
+median = 76.029 GFLOPS
+CV     = 6.68%
+
+Fixed-N optimized HPL (NB=192):
+mean   = 82.189 GFLOPS
+median = 82.429 GFLOPS
+max    = 84.430 GFLOPS
+CV     = 2.88%
+
+Mean improvement:
+82.189 / 78.204 - 1 = 5.10%
+
+HPL mean / nominal base-frequency Rpeak:
+82.189 / 115.2 = 71.3%
+
+Best observed DGEMM:
+86.478 GFLOPS
+
+HPL mean / best observed DGEMM:
+82.189 / 86.478 = 95.0%
+
+HPL max / best observed DGEMM:
+84.430 / 86.478 = 97.6%
+
+DGEMM 4096 repeated:
+79.418, 78.870, 79.475 GFLOPS
+mean   = 79.254 GFLOPS
+median = 79.418 GFLOPS
+CV     = 0.42%
+
+Important:
+The repeated DGEMM value is not treated as a strict ceiling because it was
+measured under a different dynamic CPU state and is below some HPL runs.
+The best-observed DGEMM value is used only as an empirical reference.

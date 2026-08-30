@@ -1,0 +1,9 @@
+===== DGEMM repeat 1 =====
+Sun Aug 30 11:44:10 CST 2026
+DGEMM_RESULT ranks=4 N=4096 reps=2 time=13.844649 GFLOPS=79.418
+===== DGEMM repeat 2 =====
+Sun Aug 30 11:47:33 CST 2026
+DGEMM_RESULT ranks=4 N=4096 reps=2 time=13.940742 GFLOPS=78.870
+===== DGEMM repeat 3 =====
+Sun Aug 30 11:50:57 CST 2026
+DGEMM_RESULT ranks=4 N=4096 reps=2 time=13.834669 GFLOPS=79.475

@@ -1,0 +1,122 @@
+HPL Optimization Summary
+========================
+
+1. Runtime configuration
+------------------------
+MPI ranks: 4
+MPI mapping: --map-by core
+MPI binding: --bind-to core
+OpenMPI local transport: --mca btl self,sm
+OMP_NUM_THREADS=1
+OPENBLAS_NUM_THREADS=1
+
+2. Correctness
+--------------
+All retained HPL benchmark runs passed the HPL scaled residual check.
+
+3. NB tuning
+------------
+Coarse sweep:
+NB=128: 66.684 GFLOPS
+NB=192: 67.255 GFLOPS
+NB=256: 62.119 GFLOPS
+
+Fixed-N paired validation:
+NB=128:
+76.029, 84.164, 74.418 GFLOPS
+mean = 78.204 GFLOPS
+median = 76.029 GFLOPS
+CV = 6.68%
+
+NB=192:
+82.429, 79.708, 84.430 GFLOPS
+mean = 82.189 GFLOPS
+median = 82.429 GFLOPS
+CV = 2.88%
+
+Mean improvement of NB=192 over NB=128:
+5.10%
+
+Validated choice:
+NB=192
+
+4. Process-grid tuning
+----------------------
+1x4: 69.575 GFLOPS
+2x2: 72.610 GFLOPS
+
+Chosen process grid:
+2x2
+
+5. Problem-size sensitivity
+---------------------------
+N=15360: 68.417 GFLOPS
+N=18432: 72.610 GFLOPS
+N=23040: 73.850 GFLOPS
+
+Within this N-sweep session, N=23040 achieved the highest throughput.
+N=23040 completed without swap usage.
+
+Because N changes the workload, these values are treated as
+problem-size sensitivity results rather than same-workload speedup.
+
+6. BCAST x DEPTH exploration
+----------------------------
+BCAST=1 DEPTH=0: 60.255 GFLOPS
+BCAST=3 DEPTH=0: 55.743 GFLOPS
+BCAST=1 DEPTH=1: 64.775 GFLOPS
+BCAST=3 DEPTH=1: 67.005 GFLOPS
+
+Best result within this mini-sweep:
+BCAST=3 DEPTH=1: 67.005 GFLOPS
+
+Relative to BCAST=1 DEPTH=0 in the same sweep:
++11.20%
+
+DEPTH=1 outperformed DEPTH=0 at both BCAST settings.
+The effect of BCAST changed with DEPTH, suggesting parameter interaction.
+
+Because each cell was measured only once and the machine showed
+substantial run-to-run variation, this result is treated as exploratory
+rather than as a validated stable speedup.
+
+7. Performance ceiling analysis
+-------------------------------
+CPU: Intel Core i7-10510U
+Physical cores: 4
+Base frequency: 1.80 GHz
+SIMD: AVX2
+FMA: yes
+
+Nominal base-frequency FP64 Rpeak:
+115.2 GFLOPS
+
+Validated optimized HPL mean:
+82.189 GFLOPS
+
+HPL / nominal base-frequency Rpeak:
+71.3%
+
+Highest observed HPL run:
+84.430 GFLOPS
+
+Best observed OpenBLAS DGEMM:
+86.478 GFLOPS
+
+HPL mean / best-observed DGEMM:
+95.0%
+
+The DGEMM result is used only as an empirical reference, not as a
+strict physical performance ceiling.
+
+8. Final interpretation
+-----------------------
+The main validated optimization result is the fixed-workload NB tuning:
+NB=192 achieved a 5.10% higher mean GFLOPS than NB=128 under
+N=18432 and P x Q=2x2.
+
+The BCAST x DEPTH experiment provides additional algorithm-level
+evidence but is reported as exploratory because it was not replicated.
+
+Performance search is stopped here. Remaining work focuses on
+analysis, reproducibility, repository organization, figures, and report.

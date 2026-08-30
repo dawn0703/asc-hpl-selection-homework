@@ -1,0 +1,5 @@
+experiment,bcast,depth,N,NB,P,Q,np,time_s,gflops,status
+bcast1_depth0,1,0,18432,192,2,2,4,69.29,6.0255e+01,PASSED
+bcast3_depth1,3,1,18432,192,2,2,4,62.31,6.7005e+01,PASSED
+bcast1_depth1,1,1,18432,192,2,2,4,64.46,6.4775e+01,PASSED
+bcast3_depth0,3,0,18432,192,2,2,4,74.90,5.5743e+01,PASSED
