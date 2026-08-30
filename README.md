@@ -1,82 +1,92 @@
 # ASC Selection Homework — HPL Performance Optimization
 
-## Submission Information
+> ASC homework submission information and reproduction entry:
+> [`SUBMISSION.md`](SUBMISSION.md)
 
-- 姓名：张嘉
-- 年级专业：25级计算机科学与技术专业1班
-- 对应题目：基础题 — HPL
-- 运行环境：Windows 11 + WSL2 Ubuntu 26.04 LTS；Intel Core i7-10510U；Open MPI 5.0.10；OpenBLAS 0.3.32；GCC/GFortran 15.2.0。详细信息见 [Hardware and Software Environment](#2-hardware-and-software-environment)。
-- 完成情况：已完成 HPL 环境搭建、编译运行、Baseline、至少三组参数实验、NB / MPI process grid / problem size / BCAST × DEPTH 调优、正确性验证、重复实验、性能波动分析、DGEMM 性能参考、结果可视化与复现整理。
-- 复现方式：见 [Build](#4-build)、[Runtime Configuration](#5-runtime-configuration)、[Reproducing an HPL Run](#15-reproducing-an-hpl-run) 和 [Reproducing the Analysis and Figures](#16-reproducing-the-analysis-and-figures)。
+This repository documents the complete HPL performance-optimization
+workflow for the ASC selection homework, including environment setup,
+baseline benchmarking, parameter tuning, correctness validation,
+repeated measurements, performance-variability analysis, empirical
+DGEMM comparison, and reproducible experiment artifacts.
 
-本仓库记录 ASC 选拔作业基础题 **HPL 性能优化** 的完整实践过程，包括环境配置、Baseline、参数搜索、正确性验证、重复实验、性能上限分析和可复现脚本。
+The experiments use the official Netlib HPL 2.3 release. The upstream
+HPL computational source code was not modified. Optimization focused on:
 
-HPL 使用官方 Netlib HPL 2.3。上游 HPL 计算源码未修改，本实验主要工作集中在：
+- MPI and OpenBLAS build/runtime configuration;
+- `HPL.dat` parameter tuning;
+- MPI rank placement and CPU affinity;
+- BLAS/OpenMP thread configuration;
+- correctness and repeated validation;
+- performance-variability analysis;
+- reproducible logs, structured results, and automated visualization.
 
-- MPI / OpenBLAS 构建与运行环境；
-- `HPL.dat` 参数调优；
-- MPI rank、CPU affinity 与线程配置；
-- 正确性与重复性验证；
-- 性能上限和运行波动分析；
-- 可复现实验记录与数据可视化。
-
-源码来源及本地修改范围见 [`SOURCE.md`](SOURCE.md)。
+See [`SOURCE.md`](SOURCE.md) for upstream source information and the
+scope of local modifications.
 
 ---
 
 ## 1. Main Result
 
-本实验最主要、经过重复验证的优化为：
+The primary validated optimization in this study compares two block sizes under the same workload:
 
 - `N = 18432`
 - `P × Q = 2 × 2`
 - `4 MPI ranks`
-- `1 OpenBLAS thread / rank`
-- 对比 `NB = 128` 与 `NB = 192`
+- `1 OpenBLAS thread per rank`
+- `NB = 128` versus `NB = 192`
 
-三组 fixed-N paired validation：
+Three fixed-N paired validation runs were performed:
 
-| Pair | NB=128 (GFLOPS) | NB=192 (GFLOPS) |
-|---|---:|---:|
-| 1 | 76.029 | 82.429 |
-| 2 | 84.164 | 79.708 |
-| 3 | 74.418 | 84.430 |
-| **Mean** | **78.204** | **82.189** |
+| Pair | NB=128 (GFLOPS) | NB=192 (GFLOPS) | Relative Change |
+|---|---:|---:|---:|
+| 1 | 76.029 | 82.429 | +8.42% |
+| 2 | 84.164 | 79.708 | -5.29% |
+| 3 | 74.418 | 84.430 | +13.45% |
+| **Mean** | **78.204** | **82.189** | **+5.10%** |
 
-因此：
+The repeated mean performance of `NB=192` is therefore **5.10% higher** than that of `NB=128` under the same problem size, process grid, MPI configuration, and BLAS threading configuration.
 
-**NB=192 相对 NB=128 的平均性能提升为 5.10%。**
+The highest single HPL performance observed in the retained experiments was:
 
-NB=192 三次测试平均性能为 **82.189 GFLOPS**，最高单次观察值为 **84.430 GFLOPS**。
+**84.430 GFLOPS**
 
 ![Fixed-N paired validation](figures/fig2_fixedN_nb_validation.png)
 
-三组配对实验中 NB=192 赢得两组，NB=128 赢得一组。因此本仓库使用完整重复实验及平均值作为主要优化证据，而不是仅选择单次最高性能。
+`NB=192` outperformed `NB=128` in two of the three paired runs. Because the platform showed measurable run-to-run variation, the main conclusion is based on repeated measurements and their mean rather than on a cherry-picked single-run peak.
+
+The primary validated conclusion is therefore:
+
+> Under the fixed workload `N=18432`, `P×Q=2×2`, four MPI ranks, and one OpenBLAS thread per rank, changing `NB` from 128 to 192 increased the repeated mean HPL performance from **78.204 GFLOPS** to **82.189 GFLOPS**, corresponding to a **5.10% mean improvement**.
 
 ---
 
 ## 2. Hardware and Software Environment
 
-### Hardware
+### 2.1 Hardware
 
 - CPU: Intel Core i7-10510U
 - Physical cores: 4
 - Logical CPUs: 8
-- SIMD: AVX2
-- FMA: supported
+- Threads per core: 2
+- SIMD support: AVX2
+- FMA support: yes
+- L3 cache: 8 MiB
 - Host memory: approximately 16 GB
-- WSL2 memory: approximately 7.7 GiB
+- WSL2 memory available to the Linux guest: approximately 7.7 GiB
 
-### Software
+The processor exposes eight logical CPUs through SMT, but all formal HPL runs use only the four physical cores.
 
-- OS: Ubuntu 26.04 LTS under WSL2
-- HPL: 2.3
+### 2.2 Software
+
+- Host OS: Windows 11
+- Linux environment: WSL2 Ubuntu 26.04 LTS
+- HPL: Netlib HPL 2.3
 - GCC: 15.2.0
 - GFortran: 15.2.0
 - Open MPI: 5.0.10
 - OpenBLAS: 0.3.32 pthread
 
-完整环境记录：
+Detailed environment records are stored in:
 
 - [`results/system_info.txt`](results/system_info.txt)
 - [`results/software_info.txt`](results/software_info.txt)
@@ -84,103 +94,175 @@ NB=192 三次测试平均性能为 **82.189 GFLOPS**，最高单次观察值为 
 - [`results/thread_env.txt`](results/thread_env.txt)
 - [`results/mpi_binding.txt`](results/mpi_binding.txt)
 
+### 2.3 Process and Thread Model
+
+Formal runs use:
+
+```text
+4 MPI ranks
+×
+1 OpenBLAS thread per rank
+=
+4 primary computational execution streams
+```
+
+This mapping was chosen because the CPU contains four physical cores.
+
+Using eight MPI ranks or allowing every MPI rank to create multiple BLAS threads would risk oversubscribing the four physical cores and introducing additional scheduling overhead.
+
+The MPI binding record confirms that the four ranks were bound to four physical cores.
+
 ---
 
-## 3. HPL Algorithm and Tuning Targets
+## 3. HPL Algorithm and Tuning Strategy
 
-HPL 求解稠密线性方程组：
+HPL solves a dense linear system:
 
 ```text
 A x = b
 ```
 
-核心计算为带部分主元选取的 LU 分解，并通过二维 block-cyclic distribution 将矩阵分布到 `P × Q` MPI process grid。
+using LU factorization with partial pivoting and distributes the matrix across a two-dimensional `P × Q` MPI process grid using a block-cyclic distribution.
 
-主要执行阶段可概括为：
+At a high level, the computation repeatedly performs:
 
-1. panel factorization；
-2. panel broadcast；
-3. row interchange；
-4. trailing matrix update；
-5. 进入下一 panel；
-6. 最终 triangular solve。
+1. panel factorization;
+2. pivot handling and row exchange;
+3. panel broadcast;
+4. trailing-matrix update;
+5. transition to the next panel;
+6. final triangular solve.
 
-trailing matrix update 中包含大量 BLAS Level-3 / DGEMM 运算，因此矩阵 blocking、BLAS kernel 效率、MPI 数据分布以及 panel 通信方式都会影响最终 GFLOPS。
+The trailing-matrix update contains a large amount of BLAS Level-3 work, especially DGEMM. Therefore, HPL performance depends not only on raw floating-point throughput, but also on blocking, cache behavior, process-grid layout, communication, synchronization, and the balance between panel work and trailing updates.
 
-本实验主要研究以下参数：
+### 3.1 Tuning Parameters
 
-| Parameter | Meaning | Main performance concern |
+The main parameters investigated in this study are:
+
+| Parameter | Meaning | Main Performance Concern |
 |---|---|---|
-| `N` | Problem size | Memory utilization and BLAS-3 ratio |
-| `NB` | Block size | Cache/blocking and BLAS efficiency |
-| `P × Q` | MPI process grid | Data distribution and communication |
-| `BCAST` | Panel broadcast algorithm | Communication pattern |
-| `DEPTH` | Look-ahead depth | Critical-path overlap |
+| `N` | Matrix order / problem size | Memory usage, arithmetic intensity, BLAS-3 fraction |
+| `NB` | Algorithmic block size | Blocking, cache behavior, BLAS efficiency, panel overhead |
+| `P × Q` | MPI process grid | Data distribution and communication pattern |
+| `BCAST` | Panel broadcast algorithm | Communication behavior |
+| `DEPTH` | Look-ahead depth | Critical-path overlap between communication/panel work and updates |
 
-实验采用 **coarse-to-fine** 策略，而不是遍历全部 HPL 参数组合。
+Other HPL algorithmic settings were held fixed while the selected parameters were investigated.
+
+### 3.2 Experimental Methodology
+
+The tuning process follows a coarse-to-fine workflow:
+
+```text
+Correctness smoke test
+        ↓
+Baseline
+        ↓
+Coarse parameter search
+        ↓
+Candidate selection
+        ↓
+Controlled comparison
+        ↓
+Independent confirmation
+        ↓
+Repeated paired validation
+        ↓
+Algorithm-level exploratory tuning
+        ↓
+Stop when additional search is no longer justified
+```
+
+For the main optimization claim, the experiment changes only one primary parameter while keeping the workload and runtime configuration fixed.
+
+The experimental design also distinguishes three levels of evidence:
+
+- **validated result** — supported by repeated controlled measurements;
+- **exploratory result** — useful observation, but without sufficient repetition for a stable claim;
+- **highest observed result** — the best individual measurement, reported separately from the validated result.
+
+This distinction is important because absolute GFLOPS varied noticeably between different time windows on the WSL2 laptop platform.
 
 ---
 
 ## 4. Build
 
-官方 HPL 2.3：
+The experiments use the official Netlib HPL 2.3 release:
 
 <https://www.netlib.org/benchmark/hpl/>
 
-本仓库不复制完整 upstream HPL source。复现时首先下载并解压 HPL 2.3。
+The upstream HPL computational source code was not modified.
 
-假设 HPL 根目录为：
+The local build configuration is stored in:
+
+[`build/Make.WSL`](build/Make.WSL)
+
+The configuration uses:
+
+- Open MPI through `/usr/bin/mpicc`;
+- OpenBLAS through the system OpenBLAS installation;
+- CBLAS interface support through `HPL_CALL_CBLAS`;
+- compiler optimization flags including `-O3` and `-march=native`.
+
+The original tested `Make.WSL` contains the absolute `TOPdir` from the experiment machine. A reproducing user should update it to the location of their own HPL 2.3 checkout.
+
+For example:
 
 ```bash
 export HPL_ROOT=/path/to/hpl-2.3
-```
-
-将本仓库构建配置复制进去：
-
-```bash
 cp build/Make.WSL "$HPL_ROOT/Make.WSL"
-```
 
-由于 `Make.WSL` 中的 `TOPdir` 来自原实验机器，其他机器复现时需将其改为实际 HPL 根目录：
-
-```bash
 sed -i "s|^TOPdir[[:space:]]*=.*|TOPdir       = $HPL_ROOT|" \
   "$HPL_ROOT/Make.WSL"
 ```
 
-然后串行编译：
+Then build HPL with:
 
 ```bash
 cd "$HPL_ROOT"
 make arch=WSL
 ```
 
-实验中曾尝试：
+### 4.1 Parallel-Build Issue
+
+An early attempt used:
 
 ```bash
 make arch=WSL -j4
 ```
 
-但旧 HPL build system 在初始化目录阶段出现 parallel-build race，因此正式构建改为：
+The legacy HPL build system produced missing-directory/copy errors during parallel initialization.
+
+The final tested build therefore uses:
 
 ```bash
 make arch=WSL
 ```
 
-串行构建成功。
+The serial build completed successfully.
+
+This was treated as a build-system race rather than as an HPL numerical or MPI runtime failure.
+
+### 4.2 Linked Libraries
+
+The generated `xhpl` executable was verified to link against the expected MPI and OpenBLAS libraries.
+
+The recorded linkage information is available in:
+
+[`results/linked_libraries.txt`](results/linked_libraries.txt)
 
 ---
 
 ## 5. Runtime Configuration
 
-所有正式测试统一设置：
+All formal HPL experiments use:
 
 ```bash
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 ```
 
-HPL 正式运行命令：
+The standard MPI launch command is:
 
 ```bash
 mpirun -np 4 \
@@ -190,14 +272,33 @@ mpirun -np 4 \
   ./xhpl
 ```
 
-设计理由：
+### 5.1 Rationale
 
-- CPU 有 4 个 physical cores，因此使用 4 MPI ranks；
-- 每个 rank 使用 1 个 OpenBLAS thread，避免 MPI × BLAS oversubscription；
-- `--bind-to core` 将 MPI rank 固定到 CPU core；
-- 所有 rank 位于同一 WSL2 VM，因此使用 local/shared-memory transport。
+`-np 4`
 
-实际 MPI binding 记录：
+: Uses one MPI rank per physical CPU core.
+
+`--map-by core`
+
+: Maps ranks by CPU core.
+
+`--bind-to core`
+
+: Pins each MPI rank to a core, reducing migration and improving experimental control.
+
+`OMP_NUM_THREADS=1`
+
+: Prevents unintended OpenMP parallelism.
+
+`OPENBLAS_NUM_THREADS=1`
+
+: Prevents each MPI process from independently creating several BLAS threads.
+
+`--mca btl self,sm`
+
+: Restricts Open MPI communication to self/shared-memory transports, which is appropriate because all MPI ranks run inside the same WSL2 virtual machine.
+
+Actual rank bindings were recorded using Open MPI's binding-report functionality and are preserved in:
 
 [`results/mpi_binding.txt`](results/mpi_binding.txt)
 
@@ -205,7 +306,7 @@ mpirun -np 4 \
 
 ## 6. Baseline
 
-Baseline 配置：
+The formal baseline configuration is:
 
 ```text
 N  = 18432
@@ -214,51 +315,39 @@ P  = 2
 Q  = 2
 ```
 
-配置文件：
+Configuration file:
 
 [`configs/HPL_baseline.dat`](configs/HPL_baseline.dat)
 
-第一次正式 Baseline：
+The first formal baseline run produced:
 
 ```text
-Time:        57.87 s
-Performance: 72.149 GFLOPS
-Correctness: PASSED
+Time        : 57.87 s
+Performance : 72.149 GFLOPS
+Correctness : PASSED
 ```
 
-Baseline 用于建立后续参数搜索的参考。由于平台存在明显运行间波动，不将该单次结果直接作为稳定机器性能。
+The baseline establishes the initial reference point for tuning.
 
+Because later experiments demonstrated significant run-to-run performance variation, this single baseline measurement is not treated as the machine's fixed or deterministic performance level.
+
+The raw output is preserved in:
+
+[`logs/baseline.log`](logs/baseline.log)
 
 ---
 
-## 7. Block Size NB
+## 7. Block Size (`NB`) Tuning
+
+`NB` controls the algorithmic block size used by HPL.
+
+A very small block size may increase panel-related overhead and reduce BLAS Level-3 efficiency. A very large block size may reduce available parallelism and interact poorly with cache behavior and panel factorization.
+
+Therefore, the first tuning stage used a coarse sweep.
 
 ### 7.1 Coarse Sweep
 
-固定：
-
-```text
-N = 18432
-P × Q = 2 × 2
-```
-
-粗搜索结果：
-
-| NB | GFLOPS | Correctness |
-|---:|---:|---|
-| 128 | 66.684 | PASSED |
-| 192 | 67.255 | PASSED |
-| 256 | 62.119 | PASSED |
-
-![NB coarse sweep](figures/fig1_nb_coarse_sweep.png)
-
-`NB=256` 性能明显下降，而 `NB=128` 与 `NB=192` 的差距较小，因此 coarse sweep 本身不足以证明 `NB=192` 稳定更优。
-
-随后继续进行了独立 confirmation 和 fixed-N paired validation。
-
-### 7.2 Fixed-N Paired Validation
-
-保持：
+Fixed parameters:
 
 ```text
 N     = 18432
@@ -266,49 +355,93 @@ P × Q = 2 × 2
 np    = 4
 ```
 
-只改变 `NB`。
+Results:
 
-重复实验：
+| NB | Time (s) | Performance (GFLOPS) | Correctness |
+|---:|---:|---:|---|
+| 128 | 62.61 | 66.684 | PASSED |
+| 192 | 62.08 | 67.255 | PASSED |
+| 256 | 67.21 | 62.119 | PASSED |
 
-```text
-NB=128:
-76.029
-84.164
-74.418 GFLOPS
+![NB coarse sweep](figures/fig1_nb_coarse_sweep.png)
 
-mean   = 78.204 GFLOPS
-median = 76.029 GFLOPS
-CV     = 6.68%
-```
+`NB=256` was clearly slower in this session.
 
-```text
-NB=192:
-82.429
-79.708
-84.430 GFLOPS
+The difference between `NB=128` and `NB=192`, however, was small enough that the coarse sweep alone was not considered sufficient evidence.
 
-mean   = 82.189 GFLOPS
-median = 82.429 GFLOPS
-CV     = 2.88%
-```
+### 7.2 Independent Confirmation
 
-平均性能提升：
+The two strongest candidates were tested again after a cooldown period.
+
+The confirmation measurements were:
 
 ```text
-82.189 / 78.204 - 1 = 5.10%
+NB=128 : 70.404 GFLOPS
+NB=192 : 72.610 GFLOPS
 ```
 
-因此将：
+Both runs passed the HPL correctness check.
+
+These results supported `NB=192` as a candidate, but the platform variability observed during the study motivated a stronger repeated validation.
+
+### 7.3 Fixed-N Paired Validation
+
+The final validation kept the following fixed:
 
 ```text
-NB = 192
+N     = 18432
+P × Q = 2 × 2
+np    = 4
+OMP_NUM_THREADS      = 1
+OPENBLAS_NUM_THREADS = 1
 ```
 
-作为本实验的 **validated choice**。
+Only `NB` changed.
 
-三组 paired run 中 NB=192 赢得两组、NB=128 赢得一组，因此这里的结论是“重复实验平均性能更高”，而不是声称 `NB=192` 在每一次运行中都必然更快。
+Three paired comparisons were run:
 
-原始数据：
+| Pair | Order | NB=128 (GFLOPS) | NB=192 (GFLOPS) |
+|---|---|---:|---:|
+| 1 | 128 → 192 | 76.029 | 82.429 |
+| 2 | 128 → 192 | 84.164 | 79.708 |
+| 3 | 192 → 128 | 74.418 | 84.430 |
+
+The third pair reversed the execution order to reduce the risk that a simple first-run/second-run ordering effect determined the result.
+
+Summary statistics:
+
+```text
+NB=128
+Mean   : 78.204 GFLOPS
+Median : 76.029 GFLOPS
+CV     : 6.68%
+
+NB=192
+Mean   : 82.189 GFLOPS
+Median : 82.429 GFLOPS
+CV     : 2.88%
+```
+
+Mean improvement:
+
+```text
+82.189 / 78.204 - 1
+≈ 5.10%
+```
+
+Pairwise changes:
+
+```text
+Pair 1 : +8.42%
+Pair 2 : -5.29%
+Pair 3 : +13.45%
+```
+
+`NB=192` won two of the three paired comparisons.
+
+The validated conclusion is therefore not that `NB=192` must win every individual run. Instead, the evidence supports that `NB=192` achieved a higher repeated mean performance under the tested fixed workload.
+
+Raw structured data:
 
 [`results/fixedN_validation.csv`](results/fixedN_validation.csv)
 
@@ -316,7 +449,16 @@ NB = 192
 
 ## 8. MPI Process Grid
 
-固定：
+HPL distributes the matrix over a two-dimensional MPI process grid.
+
+With four MPI ranks, two relevant layouts are:
+
+```text
+1 × 4
+2 × 2
+```
+
+The experiment fixed:
 
 ```text
 N  = 18432
@@ -324,44 +466,54 @@ NB = 192
 np = 4
 ```
 
-比较：
+Results:
 
-| P × Q | GFLOPS | Correctness |
-|---|---:|---|
-| 1 × 4 | 69.575 | PASSED |
-| 2 × 2 | 72.610 | PASSED |
+| P × Q | Time (s) | Performance (GFLOPS) | Correctness |
+|---|---:|---:|---|
+| 1 × 4 | 60.01 | 69.575 | PASSED |
+| 2 × 2 | 57.50 | 72.610 | PASSED |
 
-![Process-grid comparison](figures/fig3_process_grid.png)
+![MPI process-grid comparison](figures/fig3_process_grid.png)
 
-在该次实验中：
+Within this comparison session, the more balanced `2 × 2` process grid achieved approximately 4.36% higher throughput than `1 × 4`.
+
+This is consistent with the general expectation that a more balanced two-dimensional decomposition can reduce unfavorable communication geometry for dense linear algebra.
+
+However, this result is interpreted specifically for:
 
 ```text
-2 × 2 : 72.610 GFLOPS
-1 × 4 : 69.575 GFLOPS
+4 MPI ranks
++
+this HPL workload
++
+this machine
 ```
 
-较平衡的 `2 × 2` process grid 表现更好，因此后续实验保留：
+and is not claimed to prove that `2 × 2` is universally optimal for all HPL systems or process counts.
+
+The later experiments therefore retain:
 
 ```text
 P × Q = 2 × 2
 ```
-
-需要说明的是，该结论来自当前机器、当前 HPL workload 和 4-rank 设置，不意味着 `2 × 2` 对所有硬件和进程数都固定最优。
 
 ---
 
 ## 9. Problem-Size Sensitivity
 
-固定：
+After selecting `NB=192` and `P×Q=2×2`, the effect of the problem size was explored.
+
+Fixed parameters:
 
 ```text
-NB = 192
+NB    = 192
 P × Q = 2 × 2
+np    = 4
 ```
 
-结果：
+Results:
 
-| N | GFLOPS | Correctness |
+| N | Performance (GFLOPS) | Correctness |
 |---:|---:|---|
 | 15360 | 68.417 | PASSED |
 | 18432 | 72.610 | PASSED |
@@ -369,36 +521,61 @@ P × Q = 2 × 2
 
 ![Problem-size sensitivity](figures/fig4_problem_size.png)
 
-在该组 problem-size sweep 中，`N=23040` 获得最高 throughput：
+The largest tested case, `N=23040`, achieved the highest throughput in this sweep:
 
 ```text
 73.850 GFLOPS
 ```
 
-`N=23040` 的矩阵主体内存规模约为：
+### 9.1 Memory Consideration
+
+The dense matrix alone requires approximately:
 
 ```text
-8 × N² ≈ 3.96 GiB
+8 × N² bytes
 ```
 
-运行过程中未使用 swap，因此这一规模仍处于本机 WSL2 可接受的内存范围。
+For `N=23040`:
 
-需要特别说明：
+```text
+8 × 23040²
+≈ 3.96 GiB
+```
 
-**改变 N 同时改变了实际 workload，因此这里展示的是 problem-size sensitivity，而不是相同工作量下的 speedup。**
+The run completed without using swap.
+
+A larger problem can improve HPL throughput because fixed overhead and communication can be amortized over more floating-point work, while a larger fraction of execution may occur in efficient BLAS Level-3 kernels.
+
+However, increasing `N` also increases memory pressure and total computational work.
+
+### 9.2 Interpretation
+
+Changing `N` changes the workload itself.
+
+Therefore, this experiment is reported as:
+
+**problem-size sensitivity**
+
+rather than:
+
+**same-workload speedup**
+
+The `N=23040` result is useful for understanding throughput behavior, but it is not used as the main optimization comparison because it does not represent the same computational problem as the baseline.
 
 ---
 
 ## 10. BCAST × DEPTH Algorithm-Level Exploration
 
-最后进行一个小型 `2 × 2` factorial experiment：
+After the primary `NB` optimization had been validated, a small `2 × 2` factorial experiment was used to explore algorithm-level interaction between panel broadcast and look-ahead depth.
+
+Tested values:
 
 ```text
 BCAST ∈ {1, 3}
 DEPTH ∈ {0, 1}
 ```
 
-固定：
+Fixed parameters:
 
 ```text
 N     = 18432
@@ -407,9 +584,9 @@ P × Q = 2 × 2
 np    = 4
 ```
 
-结果：
+Results:
 
-| BCAST | DEPTH | GFLOPS | Correctness |
+| BCAST | DEPTH | Performance (GFLOPS) | Correctness |
 |---:|---:|---:|---|
 | 1 | 0 | 60.255 | PASSED |
 | 1 | 1 | 64.775 | PASSED |
@@ -418,20 +595,20 @@ np    = 4
 
 ![BCAST and DEPTH interaction](figures/fig5_bcast_depth_interaction.png)
 
-在该次 mini-sweep 中：
+Within this mini-sweep session, the best observed combination was:
 
 ```text
 BCAST = 3
 DEPTH = 1
 ```
 
-取得最高值：
+with:
 
 ```text
 67.005 GFLOPS
 ```
 
-相对同一 session 中：
+Compared with:
 
 ```text
 BCAST = 1
@@ -439,28 +616,50 @@ DEPTH = 0
 60.255 GFLOPS
 ```
 
-提升：
+the session-local improvement was:
 
 ```text
-67.005 / 60.255 - 1 ≈ 11.20%
+67.005 / 60.255 - 1
+≈ 11.20%
 ```
 
-同时观察到：
+### 10.1 Interaction
 
-- `DEPTH=1` 在两种 BCAST 设置下都高于 `DEPTH=0`；
-- 在 `DEPTH=0` 时，`BCAST=3` 低于 `BCAST=1`；
-- 在 `DEPTH=1` 时，`BCAST=3` 高于 `BCAST=1`；
-- 因此 BCAST 的影响会随 DEPTH 改变，表现出明显的 parameter interaction。
+The effect of `BCAST` depends on the value of `DEPTH`.
 
-但是每个组合仅测试一次，而且机器存在明显 run-to-run variation，因此这一部分定义为：
+At `BCAST=1`:
 
-**exploratory algorithm-level result**
+```text
+DEPTH 0 → 1
+60.255 → 64.775 GFLOPS
+≈ +7.50%
+```
 
-而不是：
+At `BCAST=3`:
 
-**validated stable speedup**。
+```text
+DEPTH 0 → 1
+55.743 → 67.005 GFLOPS
+≈ +20.20%
+```
 
-主要经过重复验证的 HPL 配置仍然是：
+Similarly, the effect of changing `BCAST` differs between `DEPTH=0` and `DEPTH=1`.
+
+This is evidence of a parameter interaction: the effect of one tuning parameter cannot be fully described independently of the other.
+
+### 10.2 Evidence Level
+
+Each factorial cell was measured only once.
+
+Because the platform had already demonstrated substantial run-to-run variation, the `BCAST × DEPTH` result is classified as:
+
+**exploratory algorithm-level evidence**
+
+rather than:
+
+**validated stable speedup**
+
+The main validated configuration therefore remains based on the repeated fixed-N `NB` experiment:
 
 ```text
 N     = 18432
@@ -470,258 +669,309 @@ BCAST = 1
 DEPTH = 0
 ```
 
+The advanced mini-sweep is retained because it demonstrates additional algorithmic analysis and exposes an interaction that could be investigated further on a more stable benchmarking platform.
+
 ---
 
-## 11. Correctness
+## 11. Correctness Validation
 
-所有保留的正式 HPL 实验均通过 HPL scaled residual check：
+Performance optimization is only meaningful if the numerical result remains correct.
+
+All retained formal HPL runs passed the HPL residual test:
 
 ```text
 PASSED
 ```
 
-HPL 使用类似以下 scaled residual 进行数值正确性判断：
+HPL evaluates a scaled residual of the form:
 
 ```text
-||Ax-b||_oo /
-(eps * (||A||_oo * ||x||_oo + ||b||_oo) * N)
+||Ax - b||∞
+-----------------------------------------------
+eps × (||A||∞ × ||x||∞ + ||b||∞) × N
 ```
 
-本实验中的典型 scaled residual 约为 `10^-3` 量级，远低于 HPL 判定阈值。
+Typical scaled residuals observed during the experiments were on the order of:
 
-因此性能调优过程中没有以牺牲数值正确性为代价。
+```text
+10^-3
+```
 
-对应原始输出保存在：
+For example, the repeated `NB=192` runs produced residual values around:
+
+```text
+2.209 × 10^-3
+```
+
+and passed the configured HPL correctness criterion.
+
+Correctness was checked after parameter changes instead of assuming that a faster run remained numerically valid.
+
+Raw HPL output files are preserved under:
 
 [`logs/`](logs/)
 
-例如：
-
-- baseline；
-- NB coarse sweep；
-- NB confirmation；
-- process-grid comparison；
-- problem-size sweep；
-- fixed-N validation；
-- BCAST × DEPTH sweep。
+including baseline, parameter sweeps, confirmations, repeated validation, and the advanced mini-sweep.
 
 ---
 
-## 12. Performance Variability
+## 12. Performance Variability and Experimental Control
 
-本实验过程中最明显的实践问题之一是：
+A major practical observation during this study was that absolute HPL performance was not perfectly stable across different time windows.
 
-**相同或相近配置在不同时间窗口下的 GFLOPS 存在较明显波动。**
+A sustained-load validation alternated the original baseline configuration and a larger candidate configuration.
 
-因此实验方法逐步从：
+The absolute GFLOPS values changed noticeably during the sequence.
 
-```text
-single-run observation
-```
-
-升级为：
+The repeated baseline values in that sustained experiment had a coefficient of variation of approximately:
 
 ```text
-single-run observation
-→ independent confirmation
-→ cooldown
-→ fixed-N paired validation
-→ reversed-order pair
-→ mean / median / CV
+11%
 ```
 
-正式实验统一控制：
+The larger configuration showed a similar level of variability.
 
-- MPI rank 数；
-- OpenBLAS/OpenMP thread 数；
-- CPU core binding；
-- HPL workload；
-- process grid；
-- 测试间 cooldown。
-
-持续负载 validation 数据：
+Structured results are stored in:
 
 [`results/final_validation.csv`](results/final_validation.csv)
 
-其中不同时间段的绝对 GFLOPS 存在较明显变化。因此本报告不跨 session 简单比较单次最高值，而优先使用：
+### 12.1 Possible Sources
+
+Possible contributors include:
+
+- CPU dynamic frequency;
+- processor power limits;
+- thermal state;
+- Windows host scheduling;
+- WSL2 scheduling and virtualization effects;
+- background host activity.
+
+No direct frequency, power, or temperature telemetry was collected during the benchmark runs.
+
+Therefore, this study does **not** claim that the observed variability was uniquely caused by thermal throttling or any other single mechanism.
+
+### 12.2 Methodological Response
+
+The experimental workflow was strengthened progressively:
 
 ```text
-same workload
-+
-same runtime configuration
-+
-paired/repeated measurements
+single observation
+        ↓
+independent confirmation
+        ↓
+cooldown between runs
+        ↓
+fixed-workload comparison
+        ↓
+paired measurements
+        ↓
+repeated pairs
+        ↓
+reversed execution order
+        ↓
+mean / median / coefficient of variation
 ```
 
-作为性能判断依据。
+This is why the final optimization claim is based on the fixed-N repeated paired experiment rather than on the highest individual GFLOPS value.
 
-可能影响性能的因素包括：
+Comparisons between measurements from different sessions are treated cautiously.
 
-- CPU dynamic frequency；
-- power state；
-- thermal state；
-- Windows host scheduling；
-- WSL2 scheduling。
+Where possible, conclusions are based on measurements collected:
 
-但本实验没有额外的硬件频率、功耗或温度遥测，因此不将观察到的波动唯一归因于某一种机制。
+```text
+under the same workload
++
+with the same runtime configuration
++
+within a controlled experiment
+```
 
 ---
 
 ## 13. Nominal Rpeak and DGEMM Reference
 
-### 13.1 Nominal Base-Frequency Rpeak
+To place the HPL results in context, two performance references were considered:
 
-Intel Core i7-10510U 支持 AVX2 和 FMA。
+1. a nominal base-frequency FP64 Rpeak estimate;
+2. an empirical OpenBLAS DGEMM throughput reference.
 
-一个 256-bit AVX2 vector 可包含：
+These references answer different questions and should not be confused.
+
+### 13.1 Nominal Base-Frequency FP64 Rpeak
+
+The Intel Core i7-10510U supports AVX2 and FMA.
+
+A 256-bit AVX2 vector contains:
 
 ```text
 4 FP64 values
 ```
 
-FMA 对每个元素完成一次乘法和一次加法：
+An FMA performs one multiplication and one addition per element:
 
 ```text
-2 FLOPs / element
+2 FLOPs per element
 ```
 
-按每核心两个 256-bit FMA execution units 估算：
+Assuming two 256-bit FMA execution units per physical core:
 
 ```text
-4 doubles/vector
+4 FP64 values
 × 2 FLOPs/FMA
 × 2 vector FMA units
-= 16 FP64 FLOP/cycle/core
+=
+16 FP64 FLOP/cycle/core
 ```
 
-使用：
+Using four physical cores and the nominal 1.80 GHz base frequency:
 
 ```text
-4 physical cores
-× 1.80 GHz base frequency
-× 16 FP64 FLOP/cycle/core
-```
-
-得到 nominal base-frequency Rpeak：
-
-```text
+4 cores
+× 1.80 GHz
+× 16 FLOP/cycle/core
+=
 115.2 GFLOPS
 ```
 
-validated HPL mean 为：
+Thus the nominal base-frequency reference is:
+
+**115.2 GFLOPS**
+
+The validated HPL mean is:
 
 ```text
 82.189 GFLOPS
 ```
 
-因此：
+Therefore:
 
 ```text
-82.189 / 115.2 ≈ 71.3%
+82.189 / 115.2
+≈ 71.3%
 ```
 
-即 validated HPL mean 约达到 nominal base-frequency Rpeak 的：
+The validated HPL mean corresponds to approximately:
 
-**71.3%**
+**71.3% of nominal base-frequency Rpeak**
 
-这里的 `115.2 GFLOPS` 只是基于 base frequency 的 nominal reference，并不是 CPU 在 Turbo、功耗和温度动态状态下的严格持续物理峰值。
+This `115.2 GFLOPS` value is a nominal reference, not a strict sustained physical ceiling.
 
-### 13.2 OpenBLAS DGEMM Empirical Reference
+The processor can operate at dynamic frequencies above or below the nominal base-frequency assumption depending on workload, power, and thermal conditions.
 
-为了进一步了解当前 OpenBLAS 数学 kernel 的实际吞吐，本实验额外实现 MPI + CBLAS DGEMM microbenchmark，并保持与 HPL 类似的运行模型：
+### 13.2 Empirical MPI + OpenBLAS DGEMM Reference
+
+Because HPL spends a large fraction of its time in BLAS Level-3 operations, an additional MPI + CBLAS DGEMM microbenchmark was implemented.
+
+The microbenchmark uses a runtime structure similar to HPL:
 
 ```text
 4 MPI ranks
-1 OpenBLAS thread / rank
+1 OpenBLAS thread per rank
 core binding
 ```
 
-size sweep 中最高观察到：
+Source:
+
+[`analysis/dgemm/mpi_dgemm_ceiling.c`](analysis/dgemm/mpi_dgemm_ceiling.c)
+
+A size sweep produced:
+
+| Local DGEMM Size | Repetitions | Performance (GFLOPS) |
+|---:|---:|---:|
+| 2048 | 5 | 85.583 |
+| 3072 | 3 | 82.082 |
+| 4096 | 2 | **86.478** |
+
+The best observed DGEMM result was:
+
+**86.478 GFLOPS**
+
+Comparing the validated HPL mean with this empirical observation:
 
 ```text
-86.478 GFLOPS
+82.189 / 86.478
+≈ 95.0%
 ```
 
-因此：
+Therefore, the validated HPL mean is approximately:
+
+**95.0% of the best observed DGEMM throughput**
+
+### 13.3 Why DGEMM Is Not Treated as a Strict Ceiling
+
+A later three-run repetition of the `N=4096` DGEMM test produced:
 
 ```text
-82.189 / 86.478 ≈ 95.0%
-```
-
-即 validated HPL mean 约为 best-observed DGEMM throughput 的：
-
-**95.0%**
-
-但是后续对 `N=4096` DGEMM 进行三次重复：
-
-```text
-79.418
-78.870
+79.418 GFLOPS
+78.870 GFLOPS
 79.475 GFLOPS
 ```
 
-得到：
+with:
 
 ```text
-mean   ≈ 79.254 GFLOPS
-median ≈ 79.418 GFLOPS
+Mean   ≈ 79.254 GFLOPS
+Median ≈ 79.418 GFLOPS
 CV     ≈ 0.42%
 ```
 
-这说明同一时间窗口内 DGEMM 可以非常稳定，但不同时间窗口之间仍可能对应不同的 CPU performance state。
+This repetition was internally stable, but its absolute throughput was below several HPL measurements from other time windows.
 
-因此：
+Therefore, the best observed `86.478 GFLOPS` DGEMM result is reported only as an:
 
-```text
-86.478 GFLOPS
-```
+**empirical performance reference**
 
-只被视为：
+and not as a theoretical or physical upper bound.
 
-**best-observed empirical DGEMM reference**
-
-而不是严格的 physical performance ceiling。
-
-DGEMM 源码和测试结果：
+DGEMM data and analysis are stored in:
 
 [`analysis/dgemm/`](analysis/dgemm/)
-
 
 ---
 
 ## 14. Final Results
 
-主要实验结果汇总如下：
+The main results are summarized below.
 
-| Metric | Result |
-|---|---:|
-| Initial baseline | 72.149 GFLOPS |
-| Fixed-N NB=128 mean | 78.204 GFLOPS |
-| Fixed-N NB=192 mean | **82.189 GFLOPS** |
-| Validated mean improvement | **5.10%** |
-| Highest single HPL observation | **84.430 GFLOPS** |
-| Nominal base-frequency Rpeak | 115.2 GFLOPS |
-| HPL mean / nominal Rpeak | **71.3%** |
-| Best observed DGEMM | 86.478 GFLOPS |
-| HPL mean / DGEMM empirical reference | **95.0%** |
-| B3D1 vs B1D0 in advanced mini-sweep | **+11.20% exploratory** |
+| Metric | Result | Evidence Level |
+|---|---:|---|
+| Initial formal baseline | 72.149 GFLOPS | Single baseline |
+| Fixed-N `NB=128` mean | 78.204 GFLOPS | Repeated |
+| Fixed-N `NB=192` mean | **82.189 GFLOPS** | Repeated |
+| Validated mean improvement | **+5.10%** | **Validated** |
+| Highest single HPL observation | **84.430 GFLOPS** | Observed peak |
+| `N=23040` problem-size result | 73.850 GFLOPS | Sensitivity study |
+| Best BCAST × DEPTH cell | 67.005 GFLOPS | Exploratory |
+| B3D1 vs B1D0 session-local change | **+11.20%** | Exploratory |
+| Nominal base-frequency Rpeak | 115.2 GFLOPS | Analytical reference |
+| Validated HPL / nominal Rpeak | **71.3%** | Derived |
+| Best observed DGEMM | 86.478 GFLOPS | Empirical reference |
+| Validated HPL / best observed DGEMM | **95.0%** | Empirical comparison |
 
-其中需要区分三种不同性质的结果：
+The key result used as the final optimization claim is:
 
-1. **Validated optimization**  
-   固定 workload 下，`NB=192` 相对 `NB=128` 的 repeated mean improvement 为 **5.10%**。
+```text
+Same workload:
+N = 18432
+P × Q = 2 × 2
+4 MPI ranks
+1 OpenBLAS thread/rank
 
-2. **Highest observed HPL performance**  
-   所有保留实验中的最高单次 HPL observation 为 **84.430 GFLOPS**。
+NB=128 mean = 78.204 GFLOPS
+NB=192 mean = 82.189 GFLOPS
 
-3. **Exploratory advanced tuning result**  
-   `BCAST=3, DEPTH=1` 在单次 mini-sweep session 中相对 `BCAST=1, DEPTH=0` 高 **11.20%**，但未进行重复验证，因此不作为最终稳定 speedup。
+Mean improvement = 5.10%
+```
 
-自动统计结果：
+The highest single HPL observation, `84.430 GFLOPS`, is reported separately and is not substituted for the repeated mean.
+
+Likewise, the `BCAST=3, DEPTH=1` result is retained as exploratory evidence rather than being promoted to the final validated optimization.
+
+Machine-readable summary statistics are stored in:
 
 [`results/final_statistics.csv`](results/final_statistics.csv)
 
-实验分析摘要：
+A concise analysis summary is stored in:
 
 [`results/hpl_analysis_summary.txt`](results/hpl_analysis_summary.txt)
 
@@ -729,61 +979,73 @@ DGEMM 源码和测试结果：
 
 ## 15. Reproducing an HPL Run
 
-### 15.1 Obtain HPL
+The commands below describe the reproduction workflow used by this repository.
 
-从 Netlib 获取 HPL 2.3：
+### 15.1 Clone This Repository
+
+```bash
+git clone https://github.com/dawn0703/asc-hpl-selection-homework.git
+cd asc-hpl-selection-homework
+
+export REPO_ROOT="$(pwd)"
+```
+
+### 15.2 Obtain Netlib HPL 2.3
+
+Download HPL 2.3 from:
 
 <https://www.netlib.org/benchmark/hpl/>
 
-解压后假设其目录为：
+After extracting it, define:
 
 ```bash
 export HPL_ROOT=/path/to/hpl-2.3
 ```
 
-### 15.2 Apply Build Configuration
+### 15.3 Apply the Tested Build Configuration
 
-将本仓库提供的构建配置复制到 HPL 根目录：
+Copy the tested configuration:
 
 ```bash
-cp build/Make.WSL "$HPL_ROOT/Make.WSL"
+cp "$REPO_ROOT/build/Make.WSL" \
+   "$HPL_ROOT/Make.WSL"
 ```
 
-因为测试版 `Make.WSL` 中的 `TOPdir` 保存的是原实验机器路径，复现时应改为当前 HPL 根目录：
+Update `TOPdir` for the local checkout:
 
 ```bash
 sed -i "s|^TOPdir[[:space:]]*=.*|TOPdir       = $HPL_ROOT|" \
   "$HPL_ROOT/Make.WSL"
 ```
 
-编译：
+The tested `Make.WSL` assumes the Ubuntu OpenBLAS installation layout recorded in this repository. Library/include paths may need adjustment if OpenBLAS is installed elsewhere.
+
+Build:
 
 ```bash
 cd "$HPL_ROOT"
 make arch=WSL
 ```
 
-### 15.3 Runtime Environment
+Expected executable:
 
-正式运行前：
+```text
+$HPL_ROOT/bin/WSL/xhpl
+```
+
+### 15.4 Set Runtime Threading
 
 ```bash
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 ```
 
-### 15.4 Baseline
-
-从本仓库根目录执行：
+### 15.5 Reproduce the Baseline
 
 ```bash
-cp configs/HPL_baseline.dat \
-  "$HPL_ROOT/bin/WSL/HPL.dat"
-```
+cp "$REPO_ROOT/configs/HPL_baseline.dat" \
+   "$HPL_ROOT/bin/WSL/HPL.dat"
 
-然后：
-
-```bash
 cd "$HPL_ROOT/bin/WSL"
 
 mpirun -np 4 \
@@ -793,18 +1055,21 @@ mpirun -np 4 \
   ./xhpl
 ```
 
-### 15.5 Validated NB=192 Configuration
+Baseline parameters:
 
-从本仓库根目录执行：
-
-```bash
-cp configs/HPL_nb192_confirm.dat \
-  "$HPL_ROOT/bin/WSL/HPL.dat"
+```text
+N  = 18432
+NB = 128
+P  = 2
+Q  = 2
 ```
 
-然后使用相同 runtime command：
+### 15.6 Reproduce the Validated `NB=192` Candidate
 
 ```bash
+cp "$REPO_ROOT/configs/HPL_nb192_confirm.dat" \
+   "$HPL_ROOT/bin/WSL/HPL.dat"
+
 cd "$HPL_ROOT/bin/WSL"
 
 mpirun -np 4 \
@@ -814,52 +1079,54 @@ mpirun -np 4 \
   ./xhpl
 ```
 
-完整重复实验脚本位于：
+Main parameters:
 
-[`scripts/`](scripts/)
+```text
+N  = 18432
+NB = 192
+P  = 2
+Q  = 2
+```
 
-包括：
+Because HPL performance depends on hardware, operating-system state, CPU frequency behavior, and library versions, an independent reproduction should not be expected to produce identical absolute GFLOPS.
 
-- `run_fixedN_validation.sh`
-- `run_final_validation.sh`
-- `run_bcast_depth_sweep.sh`
+The relevant reproducibility targets are:
+
+- the configuration;
+- the experimental method;
+- correctness;
+- the direction and interpretation of observed performance effects.
 
 ---
 
 ## 16. Reproducing the Analysis and Figures
 
-本仓库的统计图不是手工制作，而是从 CSV 数据自动生成。
+The figures and final statistics are generated from structured experimental CSV files rather than being manually entered.
 
-建议创建独立 Python environment：
+### 16.1 Create a Python Environment
+
+From the repository root:
 
 ```bash
 python3 -m venv .venv-report
 source .venv-report/bin/activate
 ```
 
-安装依赖：
+Install the recorded analysis dependency:
 
 ```bash
 python -m pip install -r analysis/requirements.txt
 ```
 
-运行：
+### 16.2 Regenerate Statistics and Figures
+
+Run:
 
 ```bash
 python analysis/make_figures.py
 ```
 
-该脚本重新读取实验 CSV，计算：
-
-- repeated mean；
-- median；
-- coefficient of variation；
-- fixed-N improvement；
-- nominal Rpeak ratio；
-- DGEMM empirical-reference ratio；
-- BCAST × DEPTH exploratory effects。
-
-生成：
+The script reads the structured experiment data and regenerates:
 
 ```text
 results/final_statistics.csv
@@ -871,17 +1138,35 @@ figures/fig4_problem_size.png
 figures/fig5_bcast_depth_interaction.png
 ```
 
-因此主要结果遵循以下 provenance chain：
+The analysis includes:
+
+- repeated mean;
+- median;
+- coefficient of variation;
+- paired fixed-N improvement;
+- nominal Rpeak comparison;
+- empirical DGEMM comparison;
+- BCAST × DEPTH interaction metrics.
+
+The intended data-provenance chain is:
 
 ```text
-HPL.dat
-→ HPL execution
-→ raw log
-→ CSV
-→ automated statistics
-→ figure
-→ README / report conclusion
+HPL configuration
+        ↓
+HPL execution
+        ↓
+raw log
+        ↓
+structured CSV
+        ↓
+automated statistics
+        ↓
+figure
+        ↓
+README / final-report conclusion
 ```
+
+This structure reduces the risk of manually copying inconsistent numbers between raw benchmark output and the final report.
 
 ---
 
@@ -890,6 +1175,7 @@ HPL.dat
 ```text
 .
 ├── README.md
+├── SUBMISSION.md
 ├── SOURCE.md
 ├── .gitignore
 │
@@ -906,7 +1192,10 @@ HPL.dat
 │   ├── HPL_grid_1x4.dat
 │   ├── HPL_n15360.dat
 │   ├── HPL_n23040.dat
-│   └── HPL_bcast*_depth*.dat
+│   ├── HPL_bcast1_depth0.dat
+│   ├── HPL_bcast1_depth1.dat
+│   ├── HPL_bcast3_depth0.dat
+│   └── HPL_bcast3_depth1.dat
 │
 ├── scripts/
 │   ├── run_fixedN_validation.sh
@@ -938,9 +1227,11 @@ HPL.dat
 │       ├── dgemm_size_sweep.log
 │       ├── dgemm_repeat.log
 │       ├── performance_summary.txt
-│       └── cpu_peak_info.txt
+│       ├── cpu_peak_info.txt
+│       └── run_dgemm_repeat.sh
 │
 └── figures/
+    ├── README.txt
     ├── fig1_nb_coarse_sweep.png
     ├── fig2_fixedN_nb_validation.png
     ├── fig3_process_grid.png
@@ -948,158 +1239,184 @@ HPL.dat
     └── fig5_bcast_depth_interaction.png
 ```
 
+Generated binaries and HPL object files are intentionally not stored in this repository.
+
 ---
 
 ## 18. Troubleshooting and Lessons Learned
 
-### 18.1 Parallel Build Race
+### 18.1 Correctness Comes Before Optimization
 
-最初尝试：
+A small smoke test was used before larger benchmark experiments.
+
+The smoke configuration confirmed that:
+
+```text
+HPL executable
++
+MPI runtime
++
+OpenBLAS linkage
++
+HPL.dat
+```
+
+worked together and produced a `PASSED` result.
+
+This prevented large tuning experiments from being built on an unverified runtime environment.
+
+### 18.2 Old Build Systems Are Not Necessarily Parallel-Safe
+
+The failed:
 
 ```bash
 make arch=WSL -j4
 ```
 
-时，legacy HPL build process 在初始化部分目录时发生 race，产生 missing-directory / copy error。
+attempt demonstrated that adding `-j` is not automatically safe for a legacy Makefile.
 
-改为：
+Serial compilation was retained because it was reproducible and successful.
 
-```bash
-make arch=WSL
-```
+### 18.3 MPI × BLAS Oversubscription Must Be Controlled
 
-后串行构建成功。
-
-这说明不能仅因为机器拥有多个 CPU cores，就默认所有旧 Makefile 都是 parallel-safe。
-
-### 18.2 Open MPI Local Transport
-
-初始运行曾出现 TCP interface 相关 warning。
-
-由于所有 MPI ranks 均运行在同一个 WSL2 VM 中，最终运行命令使用：
-
-```bash
---mca btl self,sm
-```
-
-限定 local/self 和 shared-memory transport。
-
-### 18.3 MPI and BLAS Oversubscription
-
-CPU 有 4 physical cores。
-
-因此正式配置采用：
+With four physical cores, a configuration such as:
 
 ```text
 4 MPI ranks
 ×
-1 OpenBLAS thread per rank
+multiple BLAS threads per rank
 ```
 
-即总共 4 个主要计算执行流。
+could create more runnable threads than available physical cores.
 
-若每个 MPI rank 再默认启动多个 BLAS threads，则会形成：
+The final runtime explicitly sets:
 
 ```text
-MPI ranks × BLAS threads
+OMP_NUM_THREADS=1
+OPENBLAS_NUM_THREADS=1
 ```
 
-造成 oversubscription，增加 scheduling overhead 和 performance variability。
+and binds one MPI rank to each physical core.
 
-### 18.4 Performance Variation
+### 18.4 Process Placement Is Part of the Experiment
 
-该平台实验过程中存在明显的 run-to-run variation。
+A benchmark command is not completely specified by `-np`.
 
-因此实验方法逐步升级：
+CPU mapping and binding can change scheduling and cache behavior.
+
+Therefore, the formal command explicitly records:
 
 ```text
-single run
-→ coarse sweep
-→ independent confirmation
-→ cooldown
-→ paired validation
-→ reversed execution order
-→ mean / median / CV
+--map-by core
+--bind-to core
 ```
 
-这也是最终报告明确区分以下三类结果的原因：
+and the actual bindings are preserved in the repository.
+
+### 18.5 A Single Fast Run Is Weak Evidence
+
+Early short runs showed substantial performance variation.
+
+A single highest measurement can result from a favorable system state and may not represent the typical performance of a configuration.
+
+The final analysis therefore uses:
 
 ```text
-validated result
-exploratory result
-highest observed result
+repetition
++
+pairing
++
+reversed order
++
+mean / median / CV
 ```
 
-### 18.5 Different N Is Not Same-Workload Speedup
+for the primary optimization.
 
-扩大 `N` 后 GFLOPS 上升，并不意味着程序完成了相同计算任务却运行得更快。
+### 18.6 Different Problem Sizes Must Not Be Reported as Same-Workload Speedup
 
-因为 HPL 的计算复杂度近似：
+The HPL computational cost grows approximately as:
 
 ```text
 O(N^3)
 ```
 
-因此改变 `N` 会同时改变问题规模和实际工作量。
+Changing `N` changes the amount of work.
 
-所以本仓库将 N sweep 描述为：
+Therefore, a larger `N` producing higher GFLOPS is reported as a throughput/problem-size effect rather than as a direct speedup over the baseline problem.
 
-```text
-problem-size sensitivity
-```
+### 18.7 Parameter Interactions Matter
 
-而不是：
+The `BCAST × DEPTH` experiment showed that the apparent effect of `BCAST` changes depending on `DEPTH`.
 
-```text
-speedup
-```
+This demonstrates why a purely one-factor-at-a-time search cannot expose every interaction.
 
-### 18.6 Empirical DGEMM Is Not a Strict Ceiling
+However, interaction exploration also increases the experimental search space, so the study uses a small factorial experiment only after the primary optimization had already been established.
 
-最高 DGEMM observation 为：
+### 18.8 Performance References Must Be Defined Carefully
 
-```text
-86.478 GFLOPS
-```
+The nominal base-frequency Rpeak and the empirical DGEMM result answer different questions.
 
-但另一个时间窗口下重复 DGEMM 稳定在约：
+`115.2 GFLOPS`
 
-```text
-79 GFLOPS
-```
+is an analytical reference based on architectural assumptions and nominal base frequency.
 
-因此不同时间窗口的 CPU dynamic state 会影响结果。
+`86.478 GFLOPS`
 
-所以 DGEMM 数据只作为：
+is the best throughput actually observed in the custom DGEMM experiment.
 
-```text
-empirical performance reference
-```
+Neither should be misrepresented as a guaranteed sustained ceiling under all CPU states.
 
-而不是严格 physical ceiling。
+### 18.9 Stop Criteria Are Part of Performance Engineering
+
+An exhaustive HPL parameter search is not practical on a noisy laptop environment.
+
+The search was stopped after:
+
+- the main `NB` effect had been repeatedly validated;
+- process-grid and problem-size behavior had been investigated;
+- an advanced BCAST × DEPTH interaction had been explored;
+- the remaining incremental search value became smaller relative to runtime cost and platform variability.
+
+The objective was therefore not to claim the globally optimal HPL configuration, but to demonstrate a controlled and reproducible optimization process.
 
 ---
 
 ## 19. Conclusion
 
-本实验采用了一个由粗到细的 HPL performance-engineering workflow：
+This study implemented a complete HPL performance-engineering workflow rather than simply searching for the largest individual GFLOPS value.
+
+The workflow was:
 
 ```text
 Environment setup
-→ Correctness smoke test
-→ Baseline
-→ NB coarse search
-→ NB confirmation
-→ process-grid comparison
-→ problem-size sensitivity
-→ fixed-N repeated validation
-→ sustained-load variability analysis
-→ nominal Rpeak / DGEMM reference
-→ BCAST × DEPTH exploration
-→ stop tuning
+        ↓
+Build and linkage verification
+        ↓
+Correctness smoke test
+        ↓
+Formal baseline
+        ↓
+NB coarse search
+        ↓
+Independent confirmation
+        ↓
+MPI process-grid comparison
+        ↓
+Problem-size sensitivity
+        ↓
+Fixed-N repeated paired validation
+        ↓
+Sustained-load variability analysis
+        ↓
+Nominal Rpeak and DGEMM reference
+        ↓
+BCAST × DEPTH interaction exploration
+        ↓
+Reproducibility and evidence packaging
 ```
 
-主要经过重复验证的配置为：
+The main validated configuration is:
 
 ```text
 N     = 18432
@@ -1111,45 +1428,33 @@ OMP_NUM_THREADS      = 1
 OPENBLAS_NUM_THREADS = 1
 ```
 
-fixed-N repeated validation 得到：
+Under the same workload, the repeated validation produced:
 
 ```text
 NB=128 mean = 78.204 GFLOPS
 NB=192 mean = 82.189 GFLOPS
 ```
 
-对应：
+corresponding to:
 
-**5.10% mean performance improvement under the same workload.**
+**a 5.10% mean performance improvement.**
 
-最高单次 HPL observation 为：
+The highest individual HPL observation was:
 
 **84.430 GFLOPS**
 
-validated HPL mean 相对：
+The validated HPL mean corresponds to approximately:
 
-```text
-115.2 GFLOPS
-```
+**71.3% of the 115.2 GFLOPS nominal base-frequency Rpeak reference**
 
-nominal base-frequency Rpeak 的比例约为：
+and:
 
-**71.3%**
+**95.0% of the 86.478 GFLOPS best-observed empirical DGEMM reference.**
 
-validated HPL mean 相对：
+The BCAST × DEPTH mini-sweep additionally exposed a meaningful algorithmic interaction, but because each combination was measured only once, it remains exploratory evidence rather than part of the validated final speedup.
 
-```text
-86.478 GFLOPS
-```
+The most important result of the study is therefore not a single benchmark number, but a reproducible methodology:
 
-best-observed DGEMM empirical reference 的比例约为：
+> performance observations should be connected to algorithmic hypotheses, controlled experiments, correctness checks, repeated measurements, uncertainty awareness, and traceable raw evidence.
 
-**95.0%**
-
-高级参数 mini-sweep 中还观察到 BCAST 与 DEPTH 的 interaction，但由于缺少重复测试，将其保留为 exploratory evidence，而不升级为最终稳定优化结论。
-
-本实验最终得到的主要经验是：
-
-**HPL 调优不能只寻找一次最高 GFLOPS，而需要结合算法结构、硬件资源、MPI/BLAS runtime、控制变量实验、正确性验证、重复测试以及可复现证据链。**
-
-完整的 configs、raw logs、CSV、统计脚本、环境信息和 figures 均保存在本仓库中。
+The repository preserves the build configuration, HPL parameter files, raw logs, structured results, statistical analysis, figures, environment records, and reproduction instructions required to audit the complete process.
