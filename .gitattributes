@@ -1,2 +1,5 @@
 # Shell scripts must keep LF endings when cloned on Windows or executed in WSL.
 *.sh text eol=lf
+# Raw output hashes must survive Windows checkouts unchanged.
+*.log -text -whitespace
+*.svg -whitespace
