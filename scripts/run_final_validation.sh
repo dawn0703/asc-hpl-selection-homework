@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$HOME/asc-selection/hpl-2.3"
-RUN="$ROOT/bin/WSL"
-RES="$ROOT/asc-results"
+REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+HPL_ROOT="${HPL_ROOT:?Set HPL_ROOT to the extracted HPL 2.3 directory}"
+RESULT_ROOT="${RESULT_ROOT:?Set RESULT_ROOT to a NEW output directory}"
+RUN="$HPL_ROOT/bin/WSL"
+RES="$RESULT_ROOT"
 LOG="$RES/logs"
-CFG="$RES/configs"
+CFG="$REPO_ROOT/configs"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
+[[ -x "$RUN/xhpl" ]] || { echo "Missing executable: $RUN/xhpl" >&2; exit 1; }
+[[ ! -e "$RESULT_ROOT" ]] || { echo "Refusing to overwrite: $RESULT_ROOT" >&2; exit 1; }
 mkdir -p "$LOG"
+ORIGINAL_CONFIG="$(mktemp)"
+cp "$RUN/HPL.dat" "$ORIGINAL_CONFIG"
+trap 'cp "$ORIGINAL_CONFIG" "$RUN/HPL.dat"; rm -f "$ORIGINAL_CONFIG"' EXIT
 
 CSV="$RES/final_validation.csv"
 echo "experiment,N,NB,P,Q,np,time_s,gflops,status" > "$CSV"

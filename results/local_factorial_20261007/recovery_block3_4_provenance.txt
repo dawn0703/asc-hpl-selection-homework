@@ -1,0 +1,16 @@
+recovery=block3_position4_bcast3_depth1
+start=2026-10-07T19:17:34+08:00
+original_hpl_dat_sha256=d6ea906119c2af596bdd6b44ae2efcbbc934d7a9b5c95c7fa924f11c4154e995
+target_config_sha256=2e220b4d81e7ed905bcda83614b9d8a429e75a01097745fc3c95814556fee7e6
+prior_rows=11
+prior_logs=11
+command=mpirun -np 4 --map-by core --bind-to core --mca btl self,sm ./xhpl
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+hpl_start=2026-10-07T19:17:38+08:00
+hpl_end=2026-10-07T19:18:29+08:00
+finalized=2026-10-07T19:21:12+08:00
+rows_after=12
+log_sha256=da93a03a7662d34ffd96f9cecd42f96cd96b70d3ae4ba9fdf9fd33293137c6a7
+result=PASSED
+original_hpl_dat_restored=yes
+note=The initial campaign stopped after run 11. Run 12 was resumed separately after a longer pause and must not be treated as a continuous three-block paired campaign.

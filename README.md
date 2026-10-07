@@ -46,6 +46,10 @@ Three fixed-N paired validation runs were performed:
 
 The repeated mean performance of `NB=192` is therefore **5.10% higher** than that of `NB=128` under the same problem size, process grid, MPI configuration, and BLAS threading configuration.
 
+In the same historical three-pair dataset, mean HPL solve time decreased from **53.547 s** (`NB=128`) to **50.827 s** (`NB=192`); all six runs passed the residual check. The 5.10% figure is the change in mean GFLOPS, not a guarantee for every future run.
+
+The 2026-10-07 update adds two local `NB` reruns and 12 `BCAST × DEPTH` runs, all `PASSED`. The new single-pair `NB` result has the opposite ordering, and the factorial results do not establish a stable winner. These measurements are kept separate from the historical paired result; see Sections 7.4 and 10.3.
+
 The highest single HPL performance observed in the retained experiments was:
 
 **84.430 GFLOPS**
@@ -93,6 +97,10 @@ Detailed environment records are stored in:
 - [`results/linked_libraries.txt`](results/linked_libraries.txt)
 - [`results/thread_env.txt`](results/thread_env.txt)
 - [`results/mpi_binding.txt`](results/mpi_binding.txt)
+- [`results/local_factorial_20261007/environment.txt`](results/local_factorial_20261007/environment.txt)
+- [`results/local_factorial_20261007/software_versions_followup.txt`](results/local_factorial_20261007/software_versions_followup.txt)
+
+During the 2026-10-07 campaign, `mpirun --version` reported missing help files. A later read-only check using `ompi_info`, `dpkg-query`, `gcc --version`, and `pkg-config` confirmed Open MPI 5.0.10, GCC/GFortran 15.2.0, and OpenBLAS 0.3.32. The failed query and follow-up output are both retained; the query failure did not prevent the 12 HPL solves.
 
 ### 2.3 Process and Thread Model
 
@@ -412,11 +420,13 @@ Summary statistics:
 
 ```text
 NB=128
+Mean HPL time : 53.547 s
 Mean   : 78.204 GFLOPS
 Median : 76.029 GFLOPS
 CV     : 6.68%
 
 NB=192
+Mean HPL time : 50.827 s
 Mean   : 82.189 GFLOPS
 Median : 82.429 GFLOPS
 CV     : 2.88%
@@ -444,6 +454,19 @@ The validated conclusion is therefore not that `NB=192` must win every individua
 Raw structured data:
 
 [`results/fixedN_validation.csv`](results/fixedN_validation.csv)
+
+### 7.4 Local Rerun on 2026-10-07
+
+The same workload and four-rank/one-thread runtime configuration were tested again on the local WSL2 laptop:
+
+| Configuration | HPL time (s) | GFLOPS | Correctness |
+|---|---:|---:|---|
+| `NB=128` | 56.06 | 74.472 | PASSED |
+| `NB=192` | 57.43 | 72.696 | PASSED |
+
+In this single pair, `NB=192` was 2.38% lower in GFLOPS. It confirms that the historical +5.10% repeated mean is not a deterministic gain. CPU frequency, temperature, and Windows/WSL background load were not recorded alongside these runs, so their individual contributions cannot be identified. A single pair neither replaces the historical three-pair estimate nor proves a new stable ordering.
+
+Evidence: [`results/local_rerun_20261007.csv`](results/local_rerun_20261007.csv), [`baseline raw log`](logs/local_rerun_20261007_baseline.log), and [`NB=192 raw log`](logs/local_rerun_20261007_nb192.log). The baseline time is **56.06 s**, consistent with its raw log.
 
 ---
 
@@ -645,11 +668,11 @@ DEPTH 0 → 1
 
 Similarly, the effect of changing `BCAST` differs between `DEPTH=0` and `DEPTH=1`.
 
-This is evidence of a parameter interaction: the effect of one tuning parameter cannot be fully described independently of the other.
+These single observations suggest a possible parameter interaction. Repeated measurements are needed to separate a systematic interaction from platform variability.
 
 ### 10.2 Evidence Level
 
-Each factorial cell was measured only once.
+In the historical mini-sweep above, each factorial cell was measured only once.
 
 Because the platform had already demonstrated substantial run-to-run variation, the `BCAST × DEPTH` result is classified as:
 
@@ -669,7 +692,43 @@ BCAST = 1
 DEPTH = 0
 ```
 
-The advanced mini-sweep is retained because it demonstrates additional algorithmic analysis and exposes an interaction that could be investigated further on a more stable benchmarking platform.
+The historical mini-sweep is retained as a hypothesis for further testing. The new repeated campaign below tests the same four cells without promoting the earlier +11.20% observation to a stable gain.
+
+### 10.3 Local Repeated Campaign on 2026-10-07
+
+This update includes three observations per cell at fixed `N=18432`, `NB=192`, `P×Q=2×2`, four MPI ranks, and one BLAS thread per rank. Block order was varied; the first 11 runs used 15-second gaps. The last cell was resumed separately about 14 minutes after interruption, so this is not an uninterrupted three-block campaign. `BCAST=1/3` corresponds to `1ringM/2ringM` in HPL output.
+
+| Block | BCAST | DEPTH | Time (s) | GFLOPS | Correctness |
+|---:|---:|---:|---:|---:|---|
+| 1 | 1 | 0 | 59.73 | 69.898 | PASSED |
+| 1 | 3 | 1 | 64.07 | 65.167 | PASSED |
+| 1 | 1 | 1 | 63.29 | 65.972 | PASSED |
+| 1 | 3 | 0 | 60.55 | 68.953 | PASSED |
+| 2 | 3 | 0 | 63.24 | 66.021 | PASSED |
+| 2 | 1 | 1 | 74.75 | 55.856 | PASSED |
+| 2 | 3 | 1 | 64.65 | 64.584 | PASSED |
+| 2 | 1 | 0 | 72.72 | 57.415 | PASSED |
+| 3 | 1 | 1 | 73.35 | 56.919 | PASSED |
+| 3 | 1 | 0 | 79.88 | 52.269 | PASSED |
+| 3 | 3 | 0 | 72.45 | 57.627 | PASSED |
+| 3 (resumed) | 3 | 1 | 51.02 | 81.838 | PASSED |
+
+| BCAST | DEPTH | Mean time (s) | Mean GFLOPS | Median GFLOPS | CV | Passed |
+|---:|---:|---:|---:|---:|---:|---|
+| 1 | 0 | 70.777 | 59.861 | 57.415 | 15.14% | 3/3 |
+| 1 | 1 | 70.463 | 59.582 | 56.919 | 9.33% | 3/3 |
+| 3 | 0 | 65.413 | 64.200 | 66.021 | 9.16% | 3/3 |
+| 3 | 1 | 59.913 | 70.530 | 65.167 | 13.89% | 3/3 |
+
+CV is sample standard deviation divided by the mean; each group has only three observations. All 12 residuals are `2.20938038e-3 < 16`. No HPL computational source, matrix size, or core solve was removed or changed.
+
+![Local BCAST and DEPTH repeats, including the resumed final run](figures/fig_hpl_local_factorial_20261007.png)
+
+Each point is one solve; black bars are arithmetic means. The apparent mean GFLOPS increase of `3/1` over `1/0` is **17.82%**, but it is affected by the resumed final run. In the first two complete blocks, the same comparison is **-6.77% / +12.49%**, with opposite signs. Their four cell means are `63.656 / 60.914 / 67.487 / 64.876 GFLOPS` in `1/0, 1/1, 3/0, 3/1` order. This sensitivity check follows the interruption boundary and does not replace the full dataset.
+
+The campaign establishes no stable winner and does not justify adopting `BCAST=3, DEPTH=1` as a verified improvement. Frequency, temperature, power, and host load were not collected, so the specific cause of variability remains unknown. Further tuning would require more uninterrupted blocks with those measurements.
+
+Raw logs, CSVs, environment/version records, and recovery provenance are included in [`results/local_factorial_20261007/`](results/local_factorial_20261007/). [`analysis/analyze_local_factorial.py`](analysis/analyze_local_factorial.py) checks the 12 CSV rows against raw logs and the recovery log hash before generating statistics and figures.
 
 ---
 
@@ -712,6 +771,8 @@ Raw HPL output files are preserved under:
 [`logs/`](logs/)
 
 including baseline, parameter sweeps, confirmations, repeated validation, and the advanced mini-sweep.
+
+The 12 new local factorial logs are stored separately in [`results/local_factorial_20261007/logs/`](results/local_factorial_20261007/logs/), and the two local `NB` reruns are in [`logs/`](logs/). All 14 new runs passed; correctness alone does not establish a speed improvement.
 
 ---
 
@@ -936,13 +997,16 @@ The main results are summarized below.
 | Metric | Result | Evidence Level |
 |---|---:|---|
 | Initial formal baseline | 72.149 GFLOPS | Single baseline |
-| Fixed-N `NB=128` mean | 78.204 GFLOPS | Repeated |
-| Fixed-N `NB=192` mean | **82.189 GFLOPS** | Repeated |
-| Validated mean improvement | **+5.10%** | **Validated** |
+| Historical fixed-N `NB=128` mean | 78.204 GFLOPS / 53.547 s | Three paired runs |
+| Historical fixed-N `NB=192` mean | **82.189 GFLOPS / 50.827 s** | Three paired runs |
+| Historical mean GFLOPS improvement | **+5.10%** | Repeated estimate; variable per pair |
 | Highest single HPL observation | **84.430 GFLOPS** | Observed peak |
 | `N=23040` problem-size result | 73.850 GFLOPS | Sensitivity study |
-| Best BCAST × DEPTH cell | 67.005 GFLOPS | Exploratory |
-| B3D1 vs B1D0 session-local change | **+11.20%** | Exploratory |
+| Historical best BCAST × DEPTH cell | 67.005 GFLOPS | Single observation per cell |
+| Historical B3D1 vs B1D0 change | **+11.20%** | Exploratory |
+| Local `NB=128 / 192` rerun | 74.472 / 72.696 GFLOPS | One pair, both PASSED |
+| Local factorial correctness | **12/12 PASSED** | CSV/raw log cross-check |
+| Local B3D1 vs B1D0 mean change | +17.82% | Descriptive; resumed run; no stable gain |
 | Nominal base-frequency Rpeak | 115.2 GFLOPS | Analytical reference |
 | Validated HPL / nominal Rpeak | **71.3%** | Derived |
 | Best observed DGEMM | 86.478 GFLOPS | Empirical reference |
@@ -965,7 +1029,7 @@ Mean improvement = 5.10%
 
 The highest single HPL observation, `84.430 GFLOPS`, is reported separately and is not substituted for the repeated mean.
 
-Likewise, the `BCAST=3, DEPTH=1` result is retained as exploratory evidence rather than being promoted to the final validated optimization.
+Neither the historical +11.20% nor the new +17.82% BCAST/DEPTH observation is promoted to a stable improvement. The new local reruns remain a separate dataset and do not replace the historical paired `NB` comparison.
 
 Machine-readable summary statistics are stored in:
 
@@ -1088,6 +1152,30 @@ P  = 2
 Q  = 2
 ```
 
+The retained candidate also uses `BCAST=1`, `DEPTH=0`, four MPI ranks, and one BLAS thread per rank.
+
+### 15.7 Run New Repeated Measurements
+
+The batch runners now accept explicit paths instead of an experiment-machine directory. Return to the repository root saved during cloning:
+
+```bash
+cd "$REPO_ROOT"
+export HPL_ROOT=/path/to/hpl-2.3
+export RESULT_ROOT="$REPO_ROOT/results/fixedN_new_run"
+bash scripts/run_fixedN_validation.sh
+```
+
+For a new full 12-run BCAST/DEPTH campaign, choose another output directory:
+
+```bash
+cd "$REPO_ROOT"
+export RESULT_ROOT="$REPO_ROOT/results/factorial_new_run"
+export COOLDOWN_S=15
+bash scripts/run_local_factorial_validation.sh
+```
+
+`run_final_validation.sh` and `run_bcast_depth_sweep.sh` use the same `HPL_ROOT`/`RESULT_ROOT` convention. `REPO_ROOT` is also inferred from the script location if unset. Each output directory must not already exist: the runners refuse to overwrite evidence, write raw logs and CSVs there, and restore the original working `HPL.dat` on exit. The factorial runner has no general resume facility; the saved campaign's final-cell recovery is documented separately in its provenance file. Shell scripts use LF line endings through `.gitattributes`.
+
 Because HPL performance depends on hardware, operating-system state, CPU frequency behavior, and library versions, an independent reproduction should not be expected to produce identical absolute GFLOPS.
 
 The relevant reproducibility targets are:
@@ -1095,7 +1183,7 @@ The relevant reproducibility targets are:
 - the configuration;
 - the experimental method;
 - correctness;
-- the direction and interpretation of observed performance effects.
+- recording and interpreting observed performance effects, including negative or inconsistent results.
 
 ---
 
@@ -1108,6 +1196,7 @@ The figures and final statistics are generated from structured experimental CSV 
 From the repository root:
 
 ```bash
+cd "$REPO_ROOT"
 python3 -m venv .venv-report
 source .venv-report/bin/activate
 ```
@@ -1168,6 +1257,17 @@ README / final-report conclusion
 
 This structure reduces the risk of manually copying inconsistent numbers between raw benchmark output and the final report.
 
+### 16.3 Verify and Plot the New Local Campaign
+
+```bash
+cd "$REPO_ROOT"
+python analysis/analyze_local_factorial.py \
+  --results "$REPO_ROOT/results/local_factorial_20261007" \
+  --figures "$REPO_ROOT/figures"
+```
+
+This reads the saved 12-run data, checks parameters, time, GFLOPS, residual, `PASSED`, execution order, and recovery hash, then regenerates `summary.csv`, `comparisons.csv`, `uninterrupted_blocks_summary.csv`, and `fig_hpl_local_factorial_20261007.png/.svg`. For new measurements, replace `--results` and `--figures` with the new experiment and figure directories. A dataset without recovery provenance is not automatically labelled as resumed. Python and the recorded Matplotlib dependency are sufficient; optional local layout-preview tools are not required.
+
 ---
 
 ## 17. Repository Structure
@@ -1178,6 +1278,7 @@ This structure reduces the risk of manually copying inconsistent numbers between
 ├── SUBMISSION.md
 ├── SOURCE.md
 ├── .gitignore
+├── .gitattributes
 │
 ├── build/
 │   └── Make.WSL
@@ -1200,13 +1301,16 @@ This structure reduces the risk of manually copying inconsistent numbers between
 ├── scripts/
 │   ├── run_fixedN_validation.sh
 │   ├── run_final_validation.sh
-│   └── run_bcast_depth_sweep.sh
+│   ├── run_bcast_depth_sweep.sh
+│   └── run_local_factorial_validation.sh
 │
 ├── results/
 │   ├── results.csv
 │   ├── fixedN_validation.csv
 │   ├── final_validation.csv
 │   ├── bcast_depth_sweep.csv
+│   ├── local_rerun_20261007.csv
+│   ├── local_factorial_20261007/  # 12 logs, CSVs, environment, recovery provenance
 │   ├── final_statistics.csv
 │   ├── hpl_analysis_summary.txt
 │   ├── system_info.txt
@@ -1220,6 +1324,7 @@ This structure reduces the risk of manually copying inconsistent numbers between
 │
 ├── analysis/
 │   ├── make_figures.py
+│   ├── analyze_local_factorial.py
 │   ├── requirements.txt
 │   └── dgemm/
 │       ├── mpi_dgemm_ceiling.c
@@ -1236,7 +1341,9 @@ This structure reduces the risk of manually copying inconsistent numbers between
     ├── fig2_fixedN_nb_validation.png
     ├── fig3_process_grid.png
     ├── fig4_problem_size.png
-    └── fig5_bcast_depth_interaction.png
+    ├── fig5_bcast_depth_interaction.png
+    ├── fig_hpl_local_factorial_20261007.png
+    └── fig_hpl_local_factorial_20261007.svg
 ```
 
 Generated binaries and HPL object files are intentionally not stored in this repository.
@@ -1349,7 +1456,7 @@ Therefore, a larger `N` producing higher GFLOPS is reported as a throughput/prob
 
 The `BCAST × DEPTH` experiment showed that the apparent effect of `BCAST` changes depending on `DEPTH`.
 
-This demonstrates why a purely one-factor-at-a-time search cannot expose every interaction.
+This motivates testing the two parameters jointly: a purely one-factor-at-a-time search cannot expose every interaction. The current measurements do not establish a stable interaction or speedup because repeated effects are inconsistent.
 
 However, interaction exploration also increases the experimental search space, so the study uses a small factorial experiment only after the primary optimization had already been established.
 
@@ -1451,7 +1558,7 @@ and:
 
 **95.0% of the 86.478 GFLOPS best-observed empirical DGEMM reference.**
 
-The BCAST × DEPTH mini-sweep additionally exposed a meaningful algorithmic interaction, but because each combination was measured only once, it remains exploratory evidence rather than part of the validated final speedup.
+The historical BCAST × DEPTH mini-sweep suggested a possible interaction. The 2026-10-07 update adds 12 correct solves, but platform variability and a separately resumed final run prevent a stable speedup conclusion. Its apparent +17.82% mean change is not adopted as an optimization gain. The local `NB` rerun also shows that the historical +5.10% mean improvement is not guaranteed in an individual pair.
 
 The most important result of the study is therefore not a single benchmark number, but a reproducible methodology:
 

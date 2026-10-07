@@ -1,0 +1,27 @@
+Collection time: 2026-10-07T19:33:40+08:00
+Environment: local Ubuntu WSL2, after the 12-run campaign
+Purpose: follow up the failed mpirun --version query in environment.txt.
+These checks did not rerun HPL or modify packages.
+
+Commands (in Ubuntu WSL2):
+date -Is
+dpkg-query -W openmpi-bin libopenmpi40 libopenblas0-pthread gcc gfortran
+gcc --version
+ompi_info --version
+pkg-config --modversion openblas
+
+Recorded output:
+2026-10-07T19:33:40+08:00
+gcc                         4:15.2.0-5ubuntu1
+gfortran                    4:15.2.0-5ubuntu1
+libopenblas0-pthread:amd64   0.3.32+ds-5
+libopenmpi40:amd64           5.0.10-1
+openmpi-bin                 5.0.10-1
+gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Open MPI v5.0.10
+OpenBLAS pkg-config version: 0.3.32
+
+The original mpirun --version failure remains in environment.txt. MPI version
+was verified afterward with ompi_info and package metadata, not recovered from
+that failed query. Compiler meta-package versions and gcc --version are distinct
+version strings and are both retained above.

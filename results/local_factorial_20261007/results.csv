@@ -1,0 +1,13 @@
+block,position,bcast,depth,N,NB,P,Q,np,openblas_threads,time_s,gflops,residual,status,log
+1,1,1,0,18432,192,2,2,4,1,59.73,69.898,2.20938038e-03,PASSED,logs/block1_1_bcast1_depth0.log
+1,2,3,1,18432,192,2,2,4,1,64.07,65.167,2.20938038e-03,PASSED,logs/block1_2_bcast3_depth1.log
+1,3,1,1,18432,192,2,2,4,1,63.29,65.972,2.20938038e-03,PASSED,logs/block1_3_bcast1_depth1.log
+1,4,3,0,18432,192,2,2,4,1,60.55,68.953,2.20938038e-03,PASSED,logs/block1_4_bcast3_depth0.log
+2,1,3,0,18432,192,2,2,4,1,63.24,66.021,2.20938038e-03,PASSED,logs/block2_1_bcast3_depth0.log
+2,2,1,1,18432,192,2,2,4,1,74.75,55.856,2.20938038e-03,PASSED,logs/block2_2_bcast1_depth1.log
+2,3,3,1,18432,192,2,2,4,1,64.65,64.584,2.20938038e-03,PASSED,logs/block2_3_bcast3_depth1.log
+2,4,1,0,18432,192,2,2,4,1,72.72,57.415,2.20938038e-03,PASSED,logs/block2_4_bcast1_depth0.log
+3,1,1,1,18432,192,2,2,4,1,73.35,56.919,2.20938038e-03,PASSED,logs/block3_1_bcast1_depth1.log
+3,2,1,0,18432,192,2,2,4,1,79.88,52.269,2.20938038e-03,PASSED,logs/block3_2_bcast1_depth0.log
+3,3,3,0,18432,192,2,2,4,1,72.45,57.627,2.20938038e-03,PASSED,logs/block3_3_bcast3_depth0.log
+3,4,3,1,18432,192,2,2,4,1,51.02,81.838,2.20938038e-03,PASSED,logs/block3_4_bcast3_depth1.log

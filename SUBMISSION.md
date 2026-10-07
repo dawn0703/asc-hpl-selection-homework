@@ -34,6 +34,10 @@
 - [`results/linked_libraries.txt`](results/linked_libraries.txt)
 - [`results/thread_env.txt`](results/thread_env.txt)
 - [`results/mpi_binding.txt`](results/mpi_binding.txt)
+- [`results/local_factorial_20261007/environment.txt`](results/local_factorial_20261007/environment.txt)
+- [`results/local_factorial_20261007/software_versions_followup.txt`](results/local_factorial_20261007/software_versions_followup.txt)
+
+2026-10-07 初始 `mpirun --version` 查询出现帮助文件缺失；随后通过 `ompi_info`、包元数据、`gcc --version` 和 `pkg-config` 确认 Open MPI 5.0.10、GCC/GFortran 15.2.0 和 OpenBLAS 0.3.32。保留原始异常与后续核查记录；查询异常没有阻止实际 HPL 求解。
 
 ---
 
@@ -55,18 +59,24 @@
 - nominal base-frequency Rpeak 分析；
 - MPI + OpenBLAS DGEMM empirical reference；
 - CSV 数据整理、统计分析与自动绘图；
-- reproducibility scripts 和 raw logs 整理。
+- reproducibility scripts 和 raw logs 整理；
+- 2026-10-07 本机 `NB=128/192` 各一次复测，以及 `BCAST={1,3} × DEPTH={0,1}` 共 12 次重复求解；新增 14 次全部 `PASSED`；
+- 本次新提交包含上述本机数据、原始日志、环境/恢复来源记录、统计图与可迁移批处理脚本。
 
-主要经过重复验证的结果：
+历史三轮配对验证结果：
 
-| Configuration | Mean Performance |
-|---|---:|
-| `N=18432, NB=128, P×Q=2×2` | 78.204 GFLOPS |
-| `N=18432, NB=192, P×Q=2×2` | **82.189 GFLOPS** |
+| Configuration | Mean HPL time (s) | Mean GFLOPS |
+|---|---:|---:|
+| `N=18432, NB=128, P×Q=2×2` | 53.547 | 78.204 |
+| `N=18432, NB=192, P×Q=2×2` | **50.827** | **82.189** |
 
 在相同 workload 下：
 
 **NB=192 相对 NB=128 的平均性能提升为 5.10%。**
+
+这是历史三轮配对的平均 GFLOPS 提升，六次均通过残差检查，不代表每次都能复现该收益。本机 2026-10-07 单轮复测为 `NB=128: 56.06 s / 74.472 GFLOPS`、`NB=192: 57.43 s / 72.696 GFLOPS`，均 `PASSED`，顺序与历史均值不同。新旧数据分别保留，不混合计算加速比。
+
+新增 BCAST/DEPTH 每组 3 次、共 12 次均 `PASSED`。`3/1` 相对 `1/0` 的全量均值表观提升为 17.82%，但末次在中断后约 14 分钟单独补跑；前两个完整 block 的变化分别为 -6.77% 和 +12.49%。因此本轮没有确立稳定赢家，保留 `NB=192, BCAST=1, DEPTH=0` 作为历史候选，不把 17.82% 当作稳定收益。详情和全部证据见 [`results/local_factorial_20261007/README.md`](results/local_factorial_20261007/README.md)。
 
 最高单次 HPL observation：
 
@@ -80,7 +90,15 @@
 
 ## 4. 复现方式
 
-### 4.1 获取 HPL
+### 4.1 克隆本仓库并获取 HPL
+
+先保存仓库根目录，后续进入 HPL 目录时继续使用该变量：
+
+```bash
+git clone https://github.com/dawn0703/asc-hpl-selection-homework.git
+cd asc-hpl-selection-homework
+export REPO_ROOT="$(pwd)"
+```
 
 使用官方 Netlib HPL 2.3：
 
@@ -97,7 +115,7 @@ export HPL_ROOT=/path/to/hpl-2.3
 复制本仓库的 build configuration：
 
 ```bash
-cp build/Make.WSL "$HPL_ROOT/Make.WSL"
+cp "$REPO_ROOT/build/Make.WSL" "$HPL_ROOT/Make.WSL"
 ```
 
 将 `Make.WSL` 中的 `TOPdir` 修改为实际 HPL 根目录，然后：
@@ -114,9 +132,10 @@ export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 ```
 
-正式运行使用：
+先按 4.4 或 4.5 复制对应的 `HPL.dat`，再使用以下命令运行：
 
 ```bash
+cd "$HPL_ROOT/bin/WSL"
 mpirun -np 4 \
   --map-by core \
   --bind-to core \
@@ -139,6 +158,12 @@ P  = 2
 Q  = 2
 ```
 
+在运行前复制对应配置：
+
+```bash
+cp "$REPO_ROOT/configs/HPL_baseline.dat" "$HPL_ROOT/bin/WSL/HPL.dat"
+```
+
 ### 4.5 Validated Optimized Configuration
 
 使用：
@@ -152,11 +177,51 @@ N  = 18432
 NB = 192
 P  = 2
 Q  = 2
+BCAST = 1
+DEPTH = 0
+```
+
+在运行前复制对应配置：
+
+```bash
+cp "$REPO_ROOT/configs/HPL_nb192_confirm.dat" "$HPL_ROOT/bin/WSL/HPL.dat"
 ```
 
 重复验证脚本：
 
 [`scripts/run_fixedN_validation.sh`](scripts/run_fixedN_validation.sh)
+
+### 4.6 新一轮批处理与统计
+
+批处理脚本通过 `HPL_ROOT` 指向 HPL 构建目录，通过 `RESULT_ROOT` 指定尚不存在的新输出目录；不再依赖原实验机绝对路径。脚本从自身位置推导仓库根目录，也可使用已保存的 `REPO_ROOT`。
+
+```bash
+cd "$REPO_ROOT"
+export RESULT_ROOT="$REPO_ROOT/results/fixedN_new_run"
+bash scripts/run_fixedN_validation.sh
+```
+
+新的完整 12 次参数实验使用另一个目录：
+
+```bash
+cd "$REPO_ROOT"
+export RESULT_ROOT="$REPO_ROOT/results/factorial_new_run"
+export COOLDOWN_S=15
+bash scripts/run_local_factorial_validation.sh
+python3 analysis/analyze_local_factorial.py \
+  --results "$RESULT_ROOT" --figures "$REPO_ROOT/figures/new_run"
+```
+
+分析需要 Python 与 `analysis/requirements.txt` 中的 Matplotlib。脚本拒绝覆盖已有输出目录，并在退出时恢复原工作 `HPL.dat`；没有通用断点续跑功能。其他批处理入口 `run_final_validation.sh`、`run_bcast_depth_sweep.sh` 使用相同目录约定。Shell 脚本通过 `.gitattributes` 固定 LF 换行。
+
+只核查和重绘本次已保存数据可运行：
+
+```bash
+cd "$REPO_ROOT"
+python3 analysis/analyze_local_factorial.py \
+  --results "$REPO_ROOT/results/local_factorial_20261007" \
+  --figures "$REPO_ROOT/figures"
+```
 
 ---
 
@@ -178,6 +243,14 @@ fixed-N repeated validation：
 
 [`results/fixedN_validation.csv`](results/fixedN_validation.csv)
 
+2026-10-07 本机复测：
+
+- [`results/local_rerun_20261007.csv`](results/local_rerun_20261007.csv)
+- [`baseline raw log`](logs/local_rerun_20261007_baseline.log)
+- [`NB=192 raw log`](logs/local_rerun_20261007_nb192.log)
+- [`12 次 BCAST/DEPTH 数据、日志、环境与补跑来源`](results/local_factorial_20261007/)
+- [`参数复测分析脚本`](analysis/analyze_local_factorial.py)
+
 ### Figures
 
 [`figures/`](figures/)
@@ -185,6 +258,8 @@ fixed-N repeated validation：
 主要结果图：
 
 ![Fixed-N validation](figures/fig2_fixedN_nb_validation.png)
+
+![本机 BCAST/DEPTH 全部重复观测](figures/fig_hpl_local_factorial_20261007.png)
 
 ### Analysis
 
@@ -222,7 +297,7 @@ HPL 使用官方 Netlib HPL 2.3。
 本仓库中的主要性能结论区分为：
 
 - **validated result**：通过 fixed-N repeated paired experiments 支持；
-- **exploratory result**：用于算法参数探索，但没有重复验证；
+- **exploratory result**：用于算法参数探索，重复次数不足或存在较大波动，不能建立稳定收益；
 - **highest observed result**：单次最高观测值。
 
 因此不使用单次最高 GFLOPS 代替稳定性能结论。

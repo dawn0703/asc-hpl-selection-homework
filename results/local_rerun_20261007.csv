@@ -1,0 +1,3 @@
+experiment,N,NB,P,Q,np,time_s,gflops,status
+baseline,18432,128,2,2,4,56.06,74.472,PASSED
+nb192,18432,192,2,2,4,57.43,72.696,PASSED

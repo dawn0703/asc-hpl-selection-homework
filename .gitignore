@@ -21,3 +21,6 @@ Thumbs.db
 *.tmp
 *.bak
 *~
+
+# Local visual QA only; the report uses final PNG/SVG files.
+/figures/preview/

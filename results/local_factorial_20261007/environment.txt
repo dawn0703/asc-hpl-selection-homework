@@ -1,0 +1,107 @@
+2026-10-07T18:47:12+08:00
+Linux win 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  8
+On-line CPU(s) list:                     0-7
+Vendor ID:                               GenuineIntel
+Model name:                              Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz
+CPU family:                              6
+Model:                                   142
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                12
+BogoMIPS:                                4608.01
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt xsaveopt xsavec xgetbv1 xsaves vnmi md_clear flush_l1d arch_capabilities
+Virtualization:                          VT-x
+Hypervisor vendor:                       Microsoft
+Virtualization type:                     full
+L1d cache:                               128 KiB (4 instances)
+L1i cache:                               128 KiB (4 instances)
+L2 cache:                                1 MiB (4 instances)
+L3 cache:                                8 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-7
+Vulnerability Gather data sampling:      Unknown: Dependent on hypervisor status
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Mitigation; Aligned branch/return thunks
+Vulnerability Itlb multihit:             KVM: Mitigation: Split huge pages
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Vulnerable: Clear CPU buffers attempted, no microcode; SMT Host state unknown
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Mitigation; Enhanced IBRS
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop
+Vulnerability Srbds:                     Unknown: Dependent on hypervisor status
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       833Mi       5.7Gi       3.5Mi       1.3Gi       6.9Gi
+Swap:          2.0Gi          0B       2.0Gi
+PRETTY_NAME="Ubuntu 26.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="26.04"
+VERSION="26.04 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=resolute
+LOGO=ubuntu-logo
+--------------------------------------------------------------------------
+Sorry!  You were supposed to get help about:
+    version
+But I couldn't open the help file:
+    /usr/lib/x86_64-linux-gnu/pmix2/share/pmix/help-schizo-ompi.txt: No such file or directory
+    /usr/lib/x86_64-linux-gnu/prrte3/share/prte/help-schizo-ompi.txt: No such file or directory.
+Sorry!
+--------------------------------------------------------------------------
+	linux-vdso.so.1 (0x000078ab30235000)
+	libopenblas.so.0 => /usr/lib/x86_64-linux-gnu/libopenblas.so.0 (0x000078ab2dd08000)
+	libmpi.so.40 => /usr/lib/x86_64-linux-gnu/libmpi.so.40 (0x000078ab2d800000)
+	libc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x000078ab2d400000)
+	libm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x000078ab2dbe2000)
+	libmvec.so.1 => /usr/lib/x86_64-linux-gnu/libmvec.so.1 (0x000078ab2d705000)
+	libgfortran.so.5 => /usr/lib/x86_64-linux-gnu/libgfortran.so.5 (0x000078ab2d000000)
+	/lib64/ld-linux-x86-64.so.2 (0x000078ab30237000)
+	libucc.so.1 => /usr/lib/x86_64-linux-gnu/libucc.so.1 (0x000078ab2d6c3000)
+	libpsm2.so.2 => /usr/lib/x86_64-linux-gnu/libpsm2.so.2 (0x000078ab2d65b000)
+	libfabric.so.1 => /usr/lib/x86_64-linux-gnu/libfabric.so.1 (0x000078ab2ce5b000)
+	libucp.so.0 => /usr/lib/x86_64-linux-gnu/libucp.so.0 (0x000078ab2cce3000)
+	libucs.so.0 => /usr/lib/x86_64-linux-gnu/libucs.so.0 (0x000078ab2d390000)
+	libopen-pal.so.80 => /usr/lib/x86_64-linux-gnu/libopen-pal.so.80 (0x000078ab2cb92000)
+	libevent_core-2.1.so.7 => /usr/lib/x86_64-linux-gnu/libevent_core-2.1.so.7 (0x000078ab2d626000)
+	libevent_pthreads-2.1.so.7 => /usr/lib/x86_64-linux-gnu/libevent_pthreads-2.1.so.7 (0x000078ab2dbdd000)
+	libhwloc.so.15 => /usr/lib/x86_64-linux-gnu/libhwloc.so.15 (0x000078ab2cb2d000)
+	libpmix.so.2 => /usr/lib/x86_64-linux-gnu/libpmix.so.2 (0x000078ab2c800000)
+	libgcc_s.so.1 => /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 (0x000078ab2caff000)
+	libnuma.so.1 => /usr/lib/x86_64-linux-gnu/libnuma.so.1 (0x000078ab2dbcf000)
+	librdmacm.so.1 => /usr/lib/x86_64-linux-gnu/librdmacm.so.1 (0x000078ab2cade000)
+	libefa.so.1 => /usr/lib/x86_64-linux-gnu/libefa.so.1 (0x000078ab2d381000)
+	libibverbs.so.1 => /usr/lib/x86_64-linux-gnu/libibverbs.so.1 (0x000078ab2cab9000)
+	libuct.so.0 => /usr/lib/x86_64-linux-gnu/libuct.so.0 (0x000078ab2ca6f000)
+	libucm.so.0 => /usr/lib/x86_64-linux-gnu/libucm.so.0 (0x000078ab2ca52000)
+	libnl-3.so.200 => /usr/lib/x86_64-linux-gnu/libnl-3.so.200 (0x000078ab2c7dd000)
+	libudev.so.1 => /usr/lib/x86_64-linux-gnu/libudev.so.1 (0x000078ab2c796000)
+	libmunge.so.2 => /usr/lib/x86_64-linux-gnu/libmunge.so.2 (0x000078ab2ca4a000)
+	libnl-route-3.so.200 => /usr/lib/x86_64-linux-gnu/libnl-route-3.so.200 (0x000078ab2c6fa000)
+ff4b8f917fd79cd4f5271197124df5c3120b5148c14f5c23c172409a04d058f1  /home/dawn/asc-selection/hpl-2.3/bin/WSL/xhpl
+2b9d7487af2355e5138b2995681879a506639d767c5b93705c3ed7a80a27981d  /mnt/e/ASC/homework培训/hpl_repo/configs/HPL_bcast1_depth0.dat
+56630b40983df8f2055bf0767062f7b8146bab8e116151fb33cf7756d539ab7d  /mnt/e/ASC/homework培训/hpl_repo/configs/HPL_bcast1_depth1.dat
+95c80f4ef3e80a9cafcfdb1e3db0afa7526a05f35a79cfa20a55e8555522aa9a  /mnt/e/ASC/homework培训/hpl_repo/configs/HPL_bcast3_depth0.dat
+2e220b4d81e7ed905bcda83614b9d8a429e75a01097745fc3c95814556fee7e6  /mnt/e/ASC/homework培训/hpl_repo/configs/HPL_bcast3_depth1.dat
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+COOLDOWN_S=15
+command: mpirun -np 4 --map-by core --bind-to core --mca btl self,sm ./xhpl
